@@ -1,0 +1,19 @@
+## Overview
+
+This mod is made to address one gripe I've alway had with create mod: Needing to have items on hand to set redstone link frequencies is just too inconvenient. The release of Aeronautics exacerbated this problem with how much redstone link usage it demands, motivating me to make this mod.
+
+# How it works:
+
+Right click a redstone link with empty hand, and it opens a GUI where you can set frequencies using JEI.
+
+---
+
+## Installation
+
+WIP, not yet uploaded
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
