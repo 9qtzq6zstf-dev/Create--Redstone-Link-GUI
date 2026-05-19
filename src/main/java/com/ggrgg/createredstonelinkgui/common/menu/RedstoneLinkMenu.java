@@ -1,22 +1,23 @@
 package com.ggrgg.createredstonelinkgui.common.menu;
 
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
+import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
-import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.DeferredHolder;
-import net.minecraft.core.registries.Registries;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class RedstoneLinkMenu extends AbstractContainerMenu {
     
@@ -30,22 +31,17 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     private LinkBehaviour behaviour;
     private RedstoneLinkBlockEntity blockEntity;
 
-    // High Performance Optimization: Cache all reflection points statically during class loading
-    private static Method cachedGetFrequencyMethod;
+    // Reflection caches
     private static Method cachedSetFrequencyMethod;
     private static Field cachedFirstFreqField;
     private static Field cachedLastFreqField;
-    private static Method cachedGetFilterMethod;
-    private static Method cachedSetFilterMethod;
+    private static Method cachedGetStackMethod;
     private static Method cachedNotifyNetworkMethod;
-    private static Field cachedFrequenciesArrayField;
+    // Method to check it at runtime
     private static boolean reflectionInitialized = false;
 
     public static synchronized void initReflection() {
         if (reflectionInitialized) return;
-        try {
-            cachedGetFrequencyMethod = LinkBehaviour.class.getMethod("getFrequency", boolean.class);
-        } catch (Exception ignored) {}
         try {
             cachedSetFrequencyMethod = LinkBehaviour.class.getMethod("setFrequency", boolean.class, ItemStack.class);
         } catch (Exception ignored) {}
@@ -58,13 +54,12 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             cachedLastFreqField.setAccessible(true);
         } catch (Exception ignored) {}
         try {
-            cachedNotifyNetworkMethod = LinkBehaviour.class.getDeclaredMethod("notifyNetwork");
+            cachedNotifyNetworkMethod = LinkBehaviour.class.getDeclaredMethod("notifySignalChange");
             cachedNotifyNetworkMethod.setAccessible(true);
         } catch (Exception ignored) {}
-        try {
-            cachedFrequenciesArrayField = LinkBehaviour.class.getDeclaredField("frequencies");
-            cachedFrequenciesArrayField.setAccessible(true);
-        } catch (Exception ignored) {}
+
+        // Pre-resolve getStack() on the Frequency class (inner class of RedstoneLinkNetworkHandler)
+        // We'll resolve it lazily in getFrequencyItem via the Frequency object's class
         reflectionInitialized = true;
     }
 
@@ -82,7 +77,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             this.behaviour = BlockEntityBehaviour.get(le, LinkBehaviour.TYPE);
         }
 
-        // Add custom Ghost Recipe Slots (Shifted by 1px from sprite coordinates to perfectly center item graphics)
+        // Add custom Ghost Recipe Slots
         this.addSlot(new GhostRecipeSlot(0, 54, 26, () -> getFrequencyItem(0), this::setFrequencyItem));
         this.addSlot(new GhostRecipeSlot(1, 108, 26, () -> getFrequencyItem(1), this::setFrequencyItem));
 
@@ -125,48 +120,29 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     
     private ItemStack getFrequencyItem(int index) {
         if (behaviour == null) return ItemStack.EMPTY;
-        
-        // Dynamic Strategy 1: Cached native getter
-        if (cachedGetFrequencyMethod != null) {
-            try {
-                ItemStack stack = (ItemStack) cachedGetFrequencyMethod.invoke(behaviour, index == 0);
-                if (stack != null && !stack.isEmpty()) return stack;
-            } catch (Exception ignored) {}
-        }
 
-        // Dynamic Strategy 2: Internal Filtering Behaviour components
+        // Access the frequencyFirst / frequencyLast field directly
+        // The fields hold Frequency objects (inner class of RedstoneLinkNetworkHandler),
+        // which have a public getStack() method that returns the ItemStack.
         Field targetField = (index == 0) ? cachedFirstFreqField : cachedLastFreqField;
         if (targetField != null) {
             try {
-                Object filteringBehaviour = targetField.get(behaviour);
-                if (filteringBehaviour != null) {
-                    if (cachedGetFilterMethod == null) {
-                        cachedGetFilterMethod = filteringBehaviour.getClass().getMethod("getFilter");
+                Object frequency = targetField.get(behaviour);
+                if (frequency != null) {
+                    // Resolve getStack() lazily from the Frequency object's class
+                    if (cachedGetStackMethod == null) {
+                        cachedGetStackMethod = frequency.getClass().getMethod("getStack");
                     }
-                    ItemStack stack = (ItemStack) cachedGetFilterMethod.invoke(filteringBehaviour);
+                    ItemStack stack = (ItemStack) cachedGetStackMethod.invoke(frequency);
                     if (stack != null && !stack.isEmpty()) return stack;
                 }
             } catch (Exception ignored) {}
         }
 
-        // Dynamic Strategy 3: Structural wireless dynamic fallback matrix
-        if (cachedFrequenciesArrayField != null) {
-            try {
-                Object rawArray = cachedFrequenciesArrayField.get(behaviour);
-                if (rawArray instanceof Object[] components && index < components.length) {
-                    Object singleComponent = components[index];
-                    if (singleComponent != null) {
-                        try {
-                            Method getStack = singleComponent.getClass().getMethod("getStack");
-                            return (ItemStack) getStack.invoke(singleComponent);
-                        } catch (NoSuchMethodException e) {
-                            Field stackField = singleComponent.getClass().getDeclaredField("stack");
-                            stackField.setAccessible(true);
-                            return (ItemStack) stackField.get(singleComponent);
-                        }
-                    }
-                }
-            } catch (Exception ignored) {}
+        // Fallback: try the setFrequency method as a getter (unlikely to work,
+        // but maintained for compatibility with potential Create API additions)
+        if (cachedSetFrequencyMethod != null) {
+            // No getFrequency method exists, so this can't work — just a placeholder
         }
 
         return ItemStack.EMPTY;
@@ -193,6 +169,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public static void applyFrequencyChangeDirect(LinkBehaviour targetBehaviour, boolean isFirstSlot, ItemStack item) {
         initReflection();
         
+        // Preferred: use the public setFrequency(boolean, ItemStack) method
         if (cachedSetFrequencyMethod != null) {
             try {
                 cachedSetFrequencyMethod.invoke(targetBehaviour, isFirstSlot, item.copy());
@@ -200,21 +177,25 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             } catch (Exception ignored) {}
         }
 
+        // Fallback: directly set the Frequency field
         Field targetField = isFirstSlot ? cachedFirstFreqField : cachedLastFreqField;
         if (targetField != null) {
             try {
-                Object filteringBehaviour = targetField.get(targetBehaviour);
-                if (filteringBehaviour != null) {
-                    if (cachedSetFilterMethod == null) {
-                        cachedSetFilterMethod = filteringBehaviour.getClass().getMethod("setFilter", ItemStack.class);
-                    }
-                    cachedSetFilterMethod.invoke(filteringBehaviour, item.copy());
+                // Use reflection to call Frequency.of(stack) to create the Frequency object
+                // The Frequency class is: com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler$Frequency
+                // We need to find the static of(ItemStack) method
+                Class<?> frequencyClass = targetField.getType();
+                if (frequencyClass != null) {
+                    Method frequencyOfMethod = frequencyClass.getMethod("of", ItemStack.class);
+                    Object frequencyObj = frequencyOfMethod.invoke(null, item.copy());
+                    targetField.set(targetBehaviour, frequencyObj);
                 }
+
                 if (cachedNotifyNetworkMethod != null) {
                     cachedNotifyNetworkMethod.invoke(targetBehaviour);
                 }
             } catch (Exception e) {
-                System.err.println("[Redstone Link GUI] Static mutation map failure: " + e.getMessage());
+                System.err.println("[Redstone Link GUI] Field mutation fallback failure: " + e.getMessage());
             }
         }
     }
