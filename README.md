@@ -10,7 +10,9 @@ Right click a redstone link with empty hand, and it opens a GUI where you can se
 
 ## Installation
 
-WIP, not yet uploaded
+Modrinth: https://modrinth.com/mod/create-redstone-link-gui
+
+Curseforge: https://www.curseforge.com/minecraft/mc-mods/create-redstone-link-gui
 
 ---
 
