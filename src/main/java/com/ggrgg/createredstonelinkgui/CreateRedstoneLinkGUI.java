@@ -45,7 +45,7 @@ public class CreateRedstoneLinkGUI {
     }
 
     private void registerPackets(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar("1.1.0");
+        final PayloadRegistrar registrar = event.registrar("1.1.1");
         registrar.playToServer(
                 RedstoneLinkFrequencyPayload.TYPE,
                 RedstoneLinkFrequencyPayload.CODEC,
