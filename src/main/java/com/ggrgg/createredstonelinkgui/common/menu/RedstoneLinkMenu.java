@@ -37,11 +37,9 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     private static Field cachedLastFreqField;
     private static Method cachedGetStackMethod;
     private static Method cachedNotifyNetworkMethod;
-    // Method to check it at runtime
-    private static boolean reflectionInitialized = false;
 
-    public static synchronized void initReflection() {
-        if (reflectionInitialized) return;
+    static {
+        // Eagerly initialize all reflection on class load, ensuring zero runtime overhead
         try {
             cachedSetFrequencyMethod = LinkBehaviour.class.getMethod("setFrequency", boolean.class, ItemStack.class);
         } catch (Exception ignored) {}
@@ -57,11 +55,16 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             cachedNotifyNetworkMethod = LinkBehaviour.class.getDeclaredMethod("notifySignalChange");
             cachedNotifyNetworkMethod.setAccessible(true);
         } catch (Exception ignored) {}
-
-        // Pre-resolve getStack() on the Frequency class (inner class of RedstoneLinkNetworkHandler)
-        // We'll resolve it lazily in getFrequencyItem via the Frequency object's class
-        reflectionInitialized = true;
+        // Resolve getStack() on the Frequency class eagerly using the field type
+        try {
+            Field sampleField = cachedFirstFreqField != null ? cachedFirstFreqField : cachedLastFreqField;
+            if (sampleField != null) {
+                Class<?> frequencyClass = sampleField.getType();
+                cachedGetStackMethod = frequencyClass.getMethod("getStack");
+            }
+        } catch (Exception ignored) {}
     }
+
 
     public BlockPos getPos() { return this.pos; }
     public LinkBehaviour getBehaviour() { return this.behaviour; }
@@ -69,7 +72,6 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public RedstoneLinkMenu(int containerId, Inventory playerInventory, BlockPos pos) {
         super(TYPE.get(), containerId);
         this.pos = pos;
-        initReflection();
         
         var level = playerInventory.player.level();
         if (level.getBlockEntity(pos) instanceof RedstoneLinkBlockEntity le) {
@@ -128,21 +130,11 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         if (targetField != null) {
             try {
                 Object frequency = targetField.get(behaviour);
-                if (frequency != null) {
-                    // Resolve getStack() lazily from the Frequency object's class
-                    if (cachedGetStackMethod == null) {
-                        cachedGetStackMethod = frequency.getClass().getMethod("getStack");
-                    }
+                if (frequency != null && cachedGetStackMethod != null) {
                     ItemStack stack = (ItemStack) cachedGetStackMethod.invoke(frequency);
                     if (stack != null && !stack.isEmpty()) return stack;
                 }
             } catch (Exception ignored) {}
-        }
-
-        // Fallback: try the setFrequency method as a getter (unlikely to work,
-        // but maintained for compatibility with potential Create API additions)
-        if (cachedSetFrequencyMethod != null) {
-            // No getFrequency method exists, so this can't work — just a placeholder
         }
 
         return ItemStack.EMPTY;
@@ -167,7 +159,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
      * packet channels to eliminate duplicated reflection code entirely.
      */
     public static void applyFrequencyChangeDirect(LinkBehaviour targetBehaviour, boolean isFirstSlot, ItemStack item) {
-        initReflection();
+        // Reflection already initialized in static block — use cached methods directly
         
         // Preferred: use the public setFrequency(boolean, ItemStack) method
         if (cachedSetFrequencyMethod != null) {

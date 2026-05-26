@@ -40,13 +40,16 @@ public class RedstoneLinkEmiDragHandler implements EmiDragDropHandler<RedstoneLi
     public void render(RedstoneLinkConfigScreen screen, EmiIngredient dragged, GuiGraphics draw, int mouseX, int mouseY, float delta) {
         if (dragged == null || dragged.isEmpty()) return;
 
-        // Highlight both slots with a green tint while dragging an item
+        // Highlight only the slot under the cursor with a green tint
         Bounds slot1 = toBounds(screen.slot1Bounds);
         Bounds slot2 = toBounds(screen.slot2Bounds);
 
         int highlightColor = 0x8822BB33;
-        draw.fill(slot1.x(), slot1.y(), slot1.x() + slot1.width(), slot1.y() + slot1.height(), highlightColor);
-        draw.fill(slot2.x(), slot2.y(), slot2.x() + slot2.width(), slot2.y() + slot2.height(), highlightColor);
+        if (slot1.contains(mouseX, mouseY)) {
+            draw.fill(slot1.x(), slot1.y(), slot1.x() + slot1.width(), slot1.y() + slot1.height(), highlightColor);
+        } else if (slot2.contains(mouseX, mouseY)) {
+            draw.fill(slot2.x(), slot2.y(), slot2.x() + slot2.width(), slot2.y() + slot2.height(), highlightColor);
+        }
     }
 
     /**

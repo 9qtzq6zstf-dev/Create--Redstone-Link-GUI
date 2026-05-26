@@ -9,13 +9,16 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class GhostRecipeSlot extends Slot {
-    
+
+    // Shared dummy container to avoid per-slot allocation of an unused SimpleContainer
+    private static final SimpleContainer DUMMY_CONTAINER = new SimpleContainer(1);
+
     private final int slotIndex;
     private final BiConsumer<Integer, ItemStack> updateCallback;
     private final Supplier<ItemStack> getCallback;
 
     public GhostRecipeSlot(int slotIndex, int x, int y, Supplier<ItemStack> getCallback, BiConsumer<Integer, ItemStack> updateCallback) {
-        super(new SimpleContainer(1), 0, x, y);
+        super(DUMMY_CONTAINER, 0, x, y);
         this.slotIndex = slotIndex;
         this.getCallback = getCallback;
         this.updateCallback = updateCallback;
