@@ -26,9 +26,14 @@ public class CreateRedstoneLinkGUI {
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    private final String networkProtocol;
+
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
     public CreateRedstoneLinkGUI(IEventBus modEventBus, ModContainer modContainer) {
+        // Read the mod version from the injected ModContainer (sourced from gradle.properties via neoforge.mods.toml)
+        this.networkProtocol = modContainer.getModInfo().getVersion().toString();
+        
         // Register core network configurations
         modEventBus.addListener(this::registerPackets);
         
@@ -45,7 +50,7 @@ public class CreateRedstoneLinkGUI {
     }
 
     private void registerPackets(final RegisterPayloadHandlersEvent event) {
-        final PayloadRegistrar registrar = event.registrar("1.1.1");
+        final PayloadRegistrar registrar = event.registrar(networkProtocol);
         registrar.playToServer(
                 RedstoneLinkFrequencyPayload.TYPE,
                 RedstoneLinkFrequencyPayload.CODEC,

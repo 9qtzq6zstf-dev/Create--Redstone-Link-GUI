@@ -1,8 +1,15 @@
 ## Changelog
 
+# 1.21.1-1.1.1
+
+- Optimizations
+- Remove dead code
+- Change network protocol versioning
+- Changes to green highlight over frequency slots
+
 # 1.21.1-1.1.0
 
-- Added EMI compatibility
+- Adde EMI compatibility
 
 # 1.21.1-1.0.0
 
