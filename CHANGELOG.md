@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.2.0
+
+- Now check for all blocks implementing "LinkBehavior"
+
 # 1.21.1-1.1.1
 
 - Optimizations
