@@ -13,6 +13,8 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -32,38 +34,46 @@ public class CommonEventHandler {
         // 2. Allow shifting players to continue using Wrenches or clearing items
         if (player.isShiftKeyDown()) return;
 
-        // 3. Only open with empty hand
-        if (!event.getItemStack().isEmpty()) return;
-
-        // 4. Check if the block entity has a LinkBehaviour (redstone link frequency system).
+        // 3. Check if the block entity has a LinkBehaviour (redstone link frequency system).
         //    This covers vanilla Create redstone links, Aeronautics receivers, and any
         //    other mod's blocks that use the same Create frequency system.
         BlockEntity be = level.getBlockEntity(pos);
-        if (be != null) {
-            LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
-            if (behaviour != null) {
-                // 5. Initiate safe container handling sequences entirely on the logical server
-                if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-                    be.setChanged();
-                    level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
+        if (be == null) return;
 
-                    serverPlayer.openMenu(new SimpleMenuProvider(
-                        (id, inv, p) -> new RedstoneLinkMenu(id, inv, pos),
-                        Component.literal("Redstone Link Frequency")
-                    ), buf -> buf.writeBlockPos(pos));
-                }
+        LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
+        if (behaviour == null) return;
 
-                event.setCanceled(true);
-                event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
-            }
+        // 4. Only act when clicking directly on a frequency slot (first or second).
+        //    If the player missed the slots, let normal block interaction proceed.
+        BlockHitResult hitVec = event.getHitVec();
+        if (hitVec == null) return;
+        Vec3 hitLocation = hitVec.getLocation();
+        if (!behaviour.testHit(true, hitLocation) && !behaviour.testHit(false, hitLocation)) return;
+
+        // 5. Only open our menu with empty hand. If the player is holding an item,
+        //    let Create handle the slot click (set frequency) normally.
+        if (!event.getItemStack().isEmpty()) return;
+
+        // 6. Initiate safe container handling sequences entirely on the logical server
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            be.setChanged();
+            level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
+
+            serverPlayer.openMenu(new SimpleMenuProvider(
+                (id, inv, p) -> new RedstoneLinkMenu(id, inv, pos),
+                Component.literal("Redstone Link Frequency")
+            ), buf -> buf.writeBlockPos(pos));
         }
+
+        event.setCanceled(true);
+        event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
     }
 
     // == Legacy Aeronautics-specific string check (kept for reference) ==
     //
     // If you need to restrict to specific blocks rather than any LinkBehaviour holder,
     // uncomment the method below and add `|| isAeronauticsReceiverClass(state)` to the
-    // condition above, alongside restoring the `RedstoneLinkBlock` import.
+    // condition above, alongside restoring a `BlockState state` variable.
     //
     // private static boolean isAeronauticsReceiverClass(BlockState state) {
     //     String className = state.getBlock().getClass().getName();
