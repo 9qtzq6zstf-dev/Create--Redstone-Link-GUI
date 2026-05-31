@@ -2,7 +2,8 @@
 
 # 1.21.1-1.2.0
 
-- Now check for all blocks implementing "LinkBehavior"
+- Now check for all blocks implementing "LinkBehavior", meaning compatibility with all blocks that uses link frequency.
+- Now only open menu when clicking on frequency slot
 
 # 1.21.1-1.1.1
 
