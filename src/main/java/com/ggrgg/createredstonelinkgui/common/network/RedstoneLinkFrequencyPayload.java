@@ -1,9 +1,9 @@
 package com.ggrgg.createredstonelinkgui.common.network;
 
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
+import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
-import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -40,13 +40,14 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
             // Verification check: Stop packets sent via malicious clients across distances
             if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > 64.0) return;
 
-            if (level.getBlockEntity(pos) instanceof RedstoneLinkBlockEntity linkBe) {
-                LinkBehaviour behaviour = BlockEntityBehaviour.get(linkBe, LinkBehaviour.TYPE);
+            var be = level.getBlockEntity(pos);
+            if (be != null) {
+                LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
                 if (behaviour != null) {
                     RedstoneLinkMenu.applyFrequencyChangeDirect(behaviour, payload.slotIndex() == 0, payload.selectedItem());
                     
-                    linkBe.setChanged();
-                    level.sendBlockUpdated(pos, linkBe.getBlockState(), linkBe.getBlockState(), 3);
+                    be.setChanged();
+                    level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
                 }
             }
         });

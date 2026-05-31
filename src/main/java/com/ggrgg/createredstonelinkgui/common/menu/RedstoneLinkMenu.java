@@ -4,7 +4,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
 import net.minecraft.core.BlockPos;
@@ -29,7 +28,6 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
 
     private final BlockPos pos;
     private LinkBehaviour behaviour;
-    private RedstoneLinkBlockEntity blockEntity;
 
     // Reflection caches
     private static Method cachedSetFrequencyMethod;
@@ -74,9 +72,9 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         this.pos = pos;
         
         var level = playerInventory.player.level();
-        if (level.getBlockEntity(pos) instanceof RedstoneLinkBlockEntity le) {
-            this.blockEntity = le;
-            this.behaviour = BlockEntityBehaviour.get(le, LinkBehaviour.TYPE);
+        var be = level.getBlockEntity(pos);
+        if (be != null) {
+            this.behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
         }
 
         // Add custom Ghost Recipe Slots
@@ -144,14 +142,6 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         if (behaviour == null) return;
         
         applyFrequencyChangeDirect(behaviour, index == 0, stack);
-        
-        if (blockEntity != null) {
-            blockEntity.setChanged();
-            var level = blockEntity.getLevel();
-            if (level != null) {
-                level.sendBlockUpdated(pos, blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
-            }
-        }
     }
 
     /**

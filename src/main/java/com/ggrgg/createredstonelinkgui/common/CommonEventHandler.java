@@ -1,8 +1,8 @@
 package com.ggrgg.createredstonelinkgui.common;
 
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
-import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -32,13 +33,17 @@ public class CommonEventHandler {
         if (player.isShiftKeyDown()) return;
 
         BlockState state = level.getBlockState(pos);
-        if (state.getBlock() instanceof RedstoneLinkBlock && event.getItemStack().isEmpty()) {
-            var be = level.getBlockEntity(pos);
-            if (be instanceof RedstoneLinkBlockEntity linkBe) {
+        boolean isTargetBlock = state.getBlock() instanceof RedstoneLinkBlock
+            // Aeronautics: modulating & directional linked receivers (resolved by string to avoid hard dependency)
+            || isAeronauticsReceiverClass(state);
+
+        if (isTargetBlock && event.getItemStack().isEmpty()) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be != null) {
                 
                 // 3. Initiate safe container handling sequences entirely on the logical server
                 if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-                    linkBe.setChanged();
+                    be.setChanged();
                     level.sendBlockUpdated(pos, state, state, 3);
                     
                     serverPlayer.openMenu(new SimpleMenuProvider(
@@ -51,5 +56,18 @@ public class CommonEventHandler {
                 event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
             }
         }
+    }
+
+    /**
+     * Checks whether the given block state belongs to one of Aeronautics's linked receiver
+     * blocks without importing any Aeronautics classes at compile time.
+     * Returns {@code false} if Aeronautics is not installed.
+     */
+    private static boolean isAeronauticsReceiverClass(BlockState state) {
+        // Use the fully-qualified class name string rather than a compile-time import,
+        // so Aeronautics remains an optional dependency.
+        String className = state.getBlock().getClass().getName();
+        return "dev.simulated_team.simulated.content.blocks.redstone.modulating_receiver.ModulatingLinkedReceiverBlock".equals(className)
+            || "dev.simulated_team.simulated.content.blocks.redstone.directional_receiver.DirectionalLinkedReceiverBlock".equals(className);
     }
 }
