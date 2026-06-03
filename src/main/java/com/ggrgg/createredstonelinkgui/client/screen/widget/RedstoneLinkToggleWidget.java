@@ -69,8 +69,22 @@ public class RedstoneLinkToggleWidget extends AbstractSimiWidget {
         graphics.fill(knobX, knobY + KNOB_SIZE - 1, knobX + KNOB_SIZE, knobY + KNOB_SIZE, 0xFF888888);
         graphics.fill(knobX + KNOB_SIZE - 1, knobY, knobX + KNOB_SIZE, knobY + KNOB_SIZE, 0xFF888888);
 
-        // === "R" label (right) ===
-        graphics.drawString(font, "R", getX() + 43, getY() + 4, 0xFFFFFFFF);
+        // === "R" label (right) — symmetric to "S" ===
+        graphics.drawString(font, "R", getX() + 35, getY() + 4, 0xFFFFFFFF);
+    }
+
+    /**
+     * Restrict hover area to track + knob only (not the full widget width).
+     * Track is 18px wide starting at x+13, knob is 10px tall centered on the track.
+     */
+    @Override
+    public boolean isMouseOver(double mouseX, double mouseY) {
+        if (!visible) return false;
+        int trackX = getX() + 13;
+        int trackY = getY() + 3;
+        return mouseX >= trackX && mouseY >= trackY
+            && mouseX < trackX + TRACK_WIDTH
+            && mouseY < trackY + KNOB_SIZE;
     }
 
     @Override
