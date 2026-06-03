@@ -2,6 +2,7 @@ package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
@@ -66,17 +67,27 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         // Draw uniform layout spacing canvas overlay
         graphics.fill(x + 7, y + 7, x + 169, y + 82, 0xFFC6C6C6);
 
-        // Blit customized slot locations onto layout canvas
-        graphics.blitSprite(SLOT_SPRITE, this.slot1Bounds.getX(), this.slot1Bounds.getY(), 18, 18);
-        graphics.blitSprite(SLOT_SPRITE, this.slot2Bounds.getX(), this.slot2Bounds.getY(), 18, 18);
+        // First frequency slot — slot sprite first, then 4px border outside the slot
+        int s1x = this.slot1Bounds.getX();
+        int s1y = this.slot1Bounds.getY();
+        graphics.blitSprite(SLOT_SPRITE, s1x, s1y, 18, 18);
+        graphics.fill(s1x - 4, s1y - 4, s1x + 22, s1y, 0xFF7D2D3B);       // top
+        graphics.fill(s1x - 4, s1y + 18, s1x + 22, s1y + 22, 0xFF7D2D3B); // bottom
+        graphics.fill(s1x - 4, s1y, s1x, s1y + 18, 0xFF7D2D3B);           // left
+        graphics.fill(s1x + 18, s1y, s1x + 22, s1y + 18, 0xFF7D2D3B);     // right
+
+        // Second frequency slot — slot sprite first, then 4px border outside the slot
+        int s2x = this.slot2Bounds.getX();
+        int s2y = this.slot2Bounds.getY();
+        graphics.blitSprite(SLOT_SPRITE, s2x, s2y, 18, 18);
+        graphics.fill(s2x - 4, s2y - 4, s2x + 22, s2y, 0xFF5059AB);       // top
+        graphics.fill(s2x - 4, s2y + 18, s2x + 22, s2y + 22, 0xFF5059AB); // bottom
+        graphics.fill(s2x - 4, s2y, s2x, s2y + 18, 0xFF5059AB);           // left
+        graphics.fill(s2x + 18, s2y, s2x + 22, s2y + 18, 0xFF5059AB);     // right
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-        
-        Component customTitle = Component.literal("Link Frequencies");
-        int titleWidth = this.font.width(customTitle);
-        graphics.drawString(this.font, customTitle, (this.imageWidth - titleWidth) / 2, 10, 4210752, false);
+        // No labels — all text removed
     }
 }
