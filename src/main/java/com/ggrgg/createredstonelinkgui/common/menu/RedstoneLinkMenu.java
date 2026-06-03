@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
+import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
 import net.minecraft.core.BlockPos;
@@ -28,6 +29,8 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
 
     private final BlockPos pos;
     private LinkBehaviour behaviour;
+    private boolean isRedstoneLink;
+    private boolean receiverMode;
 
     // Reflection caches
     private static Method cachedSetFrequencyMethod;
@@ -66,12 +69,18 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
 
     public BlockPos getPos() { return this.pos; }
     public LinkBehaviour getBehaviour() { return this.behaviour; }
+    public boolean isRedstoneLink() { return this.isRedstoneLink; }
+    public boolean isReceiverMode() { return this.receiverMode; }
 
     public RedstoneLinkMenu(int containerId, Inventory playerInventory, BlockPos pos) {
         super(TYPE.get(), containerId);
         this.pos = pos;
         
         var level = playerInventory.player.level();
+        var state = level.getBlockState(pos);
+        this.isRedstoneLink = state.getBlock() instanceof RedstoneLinkBlock;
+        this.receiverMode = this.isRedstoneLink && state.getValue(RedstoneLinkBlock.RECEIVER);
+        
         var be = level.getBlockEntity(pos);
         if (be != null) {
             this.behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
