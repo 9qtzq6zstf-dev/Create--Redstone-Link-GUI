@@ -1,5 +1,10 @@
 ## Changelog
 
+# 1.21.1-1.3.0
+
+- Add indicator for red & blue frequency slots
+- Add toggle switch for redstone link receive mode
+
 # 1.21.1-1.2.0
 
 - Now check for all blocks implementing "LinkBehavior", meaning compatibility with all blocks that uses link frequency.
