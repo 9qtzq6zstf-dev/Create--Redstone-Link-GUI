@@ -58,8 +58,9 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         }
 
         // "Move this link" button — works for any block with LinkBehaviour
-        int x = this.leftPos;
-        IconButton relocateButton = new IconButton(x + 14, this.topPos + 80, AllIcons.I_MOVE_GAUGE);
+        // Centered horizontally in the overlay area (x+7 to x+169), aligned vertically with the toggle
+        int buttonX = this.leftPos + 80;
+        IconButton relocateButton = new IconButton(buttonX, this.topPos + 58, AllIcons.I_MOVE_GAUGE);
         relocateButton.withCallback(() -> {
             RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
             this.minecraft.setScreen(null);
