@@ -1,5 +1,10 @@
 ## Changelog
 
+# 1.21.1-1.4.0
+
+- Add button to relocate redstone link to new position, with configurable range
+- Lower the needlessly high neoforge and create version requirement. Now work for all versions for minecraft 1.21.1
+
 # 1.21.1-1.3.0
 
 - Add indicator for red & blue frequency slots

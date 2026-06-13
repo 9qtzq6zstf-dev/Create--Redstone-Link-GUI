@@ -4,8 +4,12 @@ This mod is made to address one gripe I've alway had with create mod: Needing to
 
 # How it works:
 
-Right click a redstone link or any other similar block's frequency slots with empty hand, and it opens a GUI where you can set frequencies using JEI/EMI.
+Right click a redstone link or any other similar block's frequency slots with empty hand to opens a GUI where you can set frequencies using JEI/EMI. Also allow you to move the redstone link block without breaking it.
 Should work with all blocks using redstone link frequencies.
+
+# Disclaimer:
+
+AI coded for the most part.
 
 ---
 

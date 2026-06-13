@@ -67,7 +67,7 @@ Enables changing redstone link frequencies via JEI
 [[dependencies.${mod_id}]]
     modId="create"
     type="required"
-    versionRange="[6.0.10,)"
+    versionRange="[6.0.0,)"
     ordering="NONE"
     side="BOTH"
 
