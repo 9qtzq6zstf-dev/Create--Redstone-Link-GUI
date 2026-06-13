@@ -1,6 +1,7 @@
 package com.ggrgg.createredstonelinkgui.common.network;
 
 import com.ggrgg.createredstonelinkgui.Config;
+import com.ggrgg.createredstonelinkgui.common.SableHelper;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -53,9 +54,10 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             Direction clickedFace = payload.clickedFace();
 
             // Verification: within interaction range
+            // Entity#distanceToSqr is already corrected by Sable mixins — no companion needed
             if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > 64.0) return;
             int maxRange = Config.MOVE_RANGE.get();
-            if (!targetPos.closerThan(sourcePos, maxRange)) return;
+            if (SableHelper.distanceSquared(level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(targetPos)) > maxRange * maxRange) return;
             if (!level.isLoaded(targetPos)) return;
 
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
@@ -74,8 +76,6 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) return;
 
             // Dynamically determine the new block state using the block's own placement logic.
-            // This works universally — each block's getStateForPlacement() handles its
-            // specific orientation constraints (FACING, FACE, etc.).
             Block block = sourceState.getBlock();
             BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
                     ItemStack.EMPTY, new BlockHitResult(Vec3.atCenterOf(targetPos), clickedFace, targetPos, false));
@@ -83,37 +83,28 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             if (newState == null) return;
 
             // Preserve blockstate properties that aren't orientation-related
-            // (e.g. POWERED visual state, RECEIVER mode)
             newState = copyNonOrientationProperties(newState, sourceState);
 
             // Validate survivability with the new orientation
             if (!newState.canSurvive(level, targetPos)) return;
 
-            // Capture full BE data (saves all NBT including LinkBehaviour frequencies,
-            // block-specific fields like MinRange/MaxRange, Transmitter, etc.)
+            // Capture full BE data
             HolderLookup.Provider registries = level.registryAccess();
             CompoundTag beTag = sourceBE.saveWithoutMetadata(registries);
 
-            // Place block at target with dynamically determined state
+            // Place block at target
             level.setBlock(targetPos, newState, Block.UPDATE_ALL);
 
-            // Restore NBT on new BE.
-            // After loadWithComponents(), the LinkBehaviour's read() checks LastKnownPosition
-            // against the new position → newPosition = true.
-            // On the next tick, initialize() → addToNetwork() → network auto re-registers.
+            // Restore NBT on new BE
             BlockEntity newBE = level.getBlockEntity(targetPos);
             if (newBE != null) {
                 newBE.loadWithComponents(beTag, registries);
                 newBE.setChanged();
             }
 
-            // Notify neighbors at new position
             level.sendBlockUpdated(targetPos, newState, newState, Block.UPDATE_ALL);
 
-            // If moving in place, we're done — the block state has been updated with new orientation
-            // Otherwise, destroy source block silently (no drops)
-            // Use UPDATE_MOVE_BY_PISTON to prevent blocks like Create: Connected's linked transmitter
-            // from dropping their transmitter item in onRemove() when the block is moved
+            // Destroy source block silently (no drops) if not in-place
             if (!inPlace) {
                 level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
                 level.sendBlockUpdated(sourcePos, sourceState, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);

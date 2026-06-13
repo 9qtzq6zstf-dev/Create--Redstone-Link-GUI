@@ -72,6 +72,13 @@ Enables changing redstone link frequencies via JEI
     side="BOTH"
 
 [[dependencies.${mod_id}]]
+    modId="sable"
+    type="optional"
+    versionRange="[1,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.${mod_id}]]
     modId="jei"
     type="optional"
     versionRange="[19,)"

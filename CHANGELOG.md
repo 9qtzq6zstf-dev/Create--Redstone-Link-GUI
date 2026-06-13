@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.4.1
+
+- Sable compatibility for the relocation feature
+
 # 1.21.1-1.4.0
 
 - Add button to relocate redstone link to new position, with configurable range

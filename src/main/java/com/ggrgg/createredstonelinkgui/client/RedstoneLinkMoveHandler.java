@@ -1,6 +1,7 @@
 package com.ggrgg.createredstonelinkgui.client;
 
 import com.ggrgg.createredstonelinkgui.Config;
+import com.ggrgg.createredstonelinkgui.common.SableHelper;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
@@ -52,8 +53,8 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Check distance
-        if (!sourcePos.closerThan(mc.player.blockPosition(), 16)) {
+        // Check distance (sublevel-aware — accounts for coordinate offsets)
+        if (SableHelper.distanceSquared(mc.level, mc.player.blockPosition().getCenter(), Vec3.atCenterOf(sourcePos)) > 256.0) {
             mc.player.displayClientMessage(Component.empty(), true);
             cancel();
             return;
@@ -99,8 +100,8 @@ public class RedstoneLinkMoveHandler {
         // Validate survivability with the new orientation
         if (!newState.canSurvive(mc.level, pos)) return;
 
-        // Must be within range (cached from config)
-        if (!pos.closerThan(sourcePos, moveRange)) return;
+        // Must be within range (sublevel-aware)
+        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > moveRange * moveRange) return;
 
         validTarget = pos;
         validFace = clickedFace;
