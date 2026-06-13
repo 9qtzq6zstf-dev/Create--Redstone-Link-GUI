@@ -110,8 +110,10 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
 
             // If moving in place, we're done — the block state has been updated with new orientation
             // Otherwise, destroy source block silently (no drops)
+            // Use UPDATE_MOVE_BY_PISTON to prevent blocks like Create: Connected's linked transmitter
+            // from dropping their transmitter item in onRemove() when the block is moved
             if (!inPlace) {
-                level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
                 level.sendBlockUpdated(sourcePos, sourceState, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
             }
         });
