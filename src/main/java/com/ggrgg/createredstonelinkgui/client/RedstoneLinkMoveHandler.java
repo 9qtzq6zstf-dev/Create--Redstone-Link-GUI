@@ -1,5 +1,6 @@
 package com.ggrgg.createredstonelinkgui.client;
 
+import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
@@ -26,6 +27,7 @@ public class RedstoneLinkMoveHandler {
     private static boolean active;
     private static BlockPos validTarget;
     private static Direction validFace;
+    private static int moveRange;
 
     public static void startRelocating(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
@@ -38,6 +40,7 @@ public class RedstoneLinkMoveHandler {
         active = true;
         validTarget = null;
         validFace = null;
+        moveRange = Config.MOVE_RANGE.get();
     }
 
     public static void clientTick() {
@@ -96,8 +99,8 @@ public class RedstoneLinkMoveHandler {
         // Validate survivability with the new orientation
         if (!newState.canSurvive(mc.level, pos)) return;
 
-        // Must be within range
-        if (!pos.closerThan(sourcePos, 24)) return;
+        // Must be within range (cached from config)
+        if (!pos.closerThan(sourcePos, moveRange)) return;
 
         validTarget = pos;
         validFace = clickedFace;
@@ -143,6 +146,7 @@ public class RedstoneLinkMoveHandler {
         sourceState = null;
         validTarget = null;
         validFace = null;
+        moveRange = 0;
     }
 
     public static boolean isActive() {

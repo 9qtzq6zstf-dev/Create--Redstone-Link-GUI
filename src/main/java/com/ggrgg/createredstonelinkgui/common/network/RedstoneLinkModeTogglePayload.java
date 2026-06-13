@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.common.network;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
@@ -14,7 +15,7 @@ public record RedstoneLinkModeTogglePayload(BlockPos pos) implements CustomPacke
 
     public static final Type<RedstoneLinkModeTogglePayload> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("createredstonelinkgui", "link_mode_toggle"));
 
-    public static final StreamCodec<net.minecraft.network.RegistryFriendlyByteBuf, RedstoneLinkModeTogglePayload> CODEC = StreamCodec.composite(
+    public static final StreamCodec<RegistryFriendlyByteBuf, RedstoneLinkModeTogglePayload> CODEC = StreamCodec.composite(
             BlockPos.STREAM_CODEC, RedstoneLinkModeTogglePayload::pos,
             RedstoneLinkModeTogglePayload::new
     );

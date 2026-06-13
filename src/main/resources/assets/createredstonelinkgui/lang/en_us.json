@@ -1,11 +1,9 @@
 {
   "createredstonelinkgui.configuration.title": "Create: Redstone Link GUI Configs",
-  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "Create: Redstone Link GUI Configs",
-  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "Create: Redstone Link GUI Configs",
-  "createredstonelinkgui.configuration.items": "Item List",
-  "createredstonelinkgui.configuration.logDirtBlock": "Log Dirt Block",
-  "createredstonelinkgui.configuration.magicNumberIntroduction": "Magic Number Text",
-  "createredstonelinkgui.configuration.magicNumber": "Magic Number",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "General",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "General",
+  "createredstonelinkgui.configuration.moveRange": "Maximum Move Range",
+  "createredstonelinkgui.configuration.moveRange.tooltip": "Maximum distance in blocks a redstone link can be moved",
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
 

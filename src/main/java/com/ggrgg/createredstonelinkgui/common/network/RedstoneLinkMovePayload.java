@@ -1,5 +1,6 @@
 package com.ggrgg.createredstonelinkgui.common.network;
 
+import com.ggrgg.createredstonelinkgui.Config;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -53,7 +54,8 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
 
             // Verification: within interaction range
             if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > 64.0) return;
-            if (!targetPos.closerThan(sourcePos, 24)) return;
+            int maxRange = Config.MOVE_RANGE.get();
+            if (!targetPos.closerThan(sourcePos, maxRange)) return;
             if (!level.isLoaded(targetPos)) return;
 
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
