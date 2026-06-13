@@ -65,10 +65,11 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
 
             BlockState sourceState = sourceBE.getBlockState();
             BlockState targetState = level.getBlockState(targetPos);
+            boolean inPlace = sourcePos.equals(targetPos);
 
-            // Target must be air or replaceable
-            if (!targetState.isAir() && !targetState.canBeReplaced()) return;
-            if (sourcePos.equals(targetPos)) return;
+            // If moving to a new position, it must be air or replaceable
+            // If moving in place, allow it (reorienting without moving)
+            if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) return;
 
             // Dynamically determine the new block state using the block's own placement logic.
             // This works universally — each block's getStateForPlacement() handles its
@@ -107,9 +108,12 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             // Notify neighbors at new position
             level.sendBlockUpdated(targetPos, newState, newState, Block.UPDATE_ALL);
 
-            // Destroy source block silently (no drops)
-            level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-            level.sendBlockUpdated(sourcePos, sourceState, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            // If moving in place, we're done — the block state has been updated with new orientation
+            // Otherwise, destroy source block silently (no drops)
+            if (!inPlace) {
+                level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+                level.sendBlockUpdated(sourcePos, sourceState, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            }
         });
     }
 

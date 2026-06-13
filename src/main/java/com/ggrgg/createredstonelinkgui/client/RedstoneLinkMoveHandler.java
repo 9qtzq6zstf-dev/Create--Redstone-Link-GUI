@@ -81,12 +81,11 @@ public class RedstoneLinkMoveHandler {
                         .scale(1 / 32f));
         BlockPos pos = BlockPos.containing(offsetPos);
 
-        if (pos.equals(sourcePos)) return;
-
         BlockState targetState = mc.level.getBlockState(pos);
 
-        // Must be air or replaceable
-        if (!targetState.isAir() && !targetState.canBeReplaced()) return;
+        // If moving to a new position, it must be air or replaceable
+        // If moving in place, allow it (orientation change only)
+        if (!pos.equals(sourcePos) && !targetState.isAir() && !targetState.canBeReplaced()) return;
 
         // Dynamically determine the new state via the block's own placement logic
         BlockPlaceContext placeContext = new BlockPlaceContext(mc.level, mc.player, InteractionHand.MAIN_HAND,
