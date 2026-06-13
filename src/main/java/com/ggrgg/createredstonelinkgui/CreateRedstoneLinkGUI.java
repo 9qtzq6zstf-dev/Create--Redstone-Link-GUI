@@ -16,6 +16,7 @@ import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
+import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
 
@@ -61,6 +62,11 @@ public class CreateRedstoneLinkGUI {
                 RedstoneLinkModeTogglePayload.TYPE,
                 RedstoneLinkModeTogglePayload.CODEC,
                 RedstoneLinkModeTogglePayload::handleServer
+        );
+        registrar.playToServer(
+                RedstoneLinkMovePayload.TYPE,
+                RedstoneLinkMovePayload.CODEC,
+                RedstoneLinkMovePayload::handleServer
         );
     }
 

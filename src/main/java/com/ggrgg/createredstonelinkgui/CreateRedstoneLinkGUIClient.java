@@ -1,5 +1,7 @@
 package com.ggrgg.createredstonelinkgui;
 
+import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
+
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -7,6 +9,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 
@@ -27,5 +31,21 @@ public class CreateRedstoneLinkGUIClient {
         // Some client setup code
         CreateRedstoneLinkGUI.LOGGER.info("HELLO FROM CLIENT SETUP");
         CreateRedstoneLinkGUI.LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+    }
+
+    @SubscribeEvent
+    static void onClientTick(ClientTickEvent.Post event) {
+        RedstoneLinkMoveHandler.clientTick();
+    }
+
+    @SubscribeEvent
+    static void onInputInteract(InputEvent.InteractionKeyMappingTriggered event) {
+        // Intercept right-click while in move mode
+        if (event.isUseItem() && RedstoneLinkMoveHandler.isActive()) {
+            if (RedstoneLinkMoveHandler.onRightClick()) {
+                event.setCanceled(true);
+                event.setSwingHand(false);
+            }
+        }
     }
 }

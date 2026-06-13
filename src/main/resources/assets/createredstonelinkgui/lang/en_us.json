@@ -7,5 +7,10 @@
   "createredstonelinkgui.configuration.magicNumberIntroduction": "Magic Number Text",
   "createredstonelinkgui.configuration.magicNumber": "Magic Number",
 
-  "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies"
+  "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
+
+  "gui.createredstonelinkgui.relocate": "Move this link",
+  "gui.createredstonelinkgui.click_to_relocate": "Click to relocate the link",
+  "gui.createredstonelinkgui.link_relocated": "Link relocated",
+  "gui.createredstonelinkgui.relocation_aborted": "Relocation aborted"
 }

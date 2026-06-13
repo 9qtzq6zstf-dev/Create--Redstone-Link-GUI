@@ -1,6 +1,9 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
+import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
+import com.simibubi.create.foundation.gui.AllIcons;
+import com.simibubi.create.foundation.gui.widget.IconButton;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
@@ -53,6 +56,16 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
                 }
             ));
         }
+
+        // "Move this link" button — works for any block with LinkBehaviour
+        int x = this.leftPos;
+        IconButton relocateButton = new IconButton(x + 14, this.topPos + 80, AllIcons.I_MOVE_GAUGE);
+        relocateButton.withCallback(() -> {
+            RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
+            this.minecraft.setScreen(null);
+        });
+        relocateButton.setToolTip(Component.translatable("gui.createredstonelinkgui.relocate"));
+        this.addRenderableWidget(relocateButton);
     }
 
     /**
