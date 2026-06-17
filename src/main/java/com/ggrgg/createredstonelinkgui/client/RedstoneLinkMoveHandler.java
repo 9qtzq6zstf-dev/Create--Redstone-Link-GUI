@@ -112,14 +112,11 @@ public class RedstoneLinkMoveHandler {
 
         // Determine effective range (mirrors server logic)
         int effectiveRange = moveRange;
-        boolean hasGaugeConnection = false;
 
         var be = mc.level.getBlockEntity(sourcePos);
         if (be != null) {
             var gaugeSupport = BlockEntityBehaviour.get(be, FactoryPanelSupportBehaviour.TYPE);
-            hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
-
-            if (hasGaugeConnection) {
+            if (gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty()) {
                 effectiveRange = Math.min(effectiveRange, 24);
 
                 // Check: gauge same-surface constraint

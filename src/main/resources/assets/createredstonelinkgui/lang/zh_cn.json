@@ -1,0 +1,21 @@
+{
+  "createredstonelinkgui.configuration.title": "机械动力：无线红石终端GUI配置",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "通用",
+  "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "通用",
+  "createredstonelinkgui.configuration.moveRange": "最大移动范围",
+  "createredstonelinkgui.configuration.moveRange.tooltip": "终端可移动的最大距离",
+
+  "container.createredstonelinkgui.redstone_link_menu": "无线红石终端频率",
+
+  "gui.createredstonelinkgui.send": "发送",
+  "gui.createredstonelinkgui.receive": "接收",
+  "gui.createredstonelinkgui.relocate": "移动此终端",
+  "gui.createredstonelinkgui.click_to_relocate": "点击放置终端",
+  "gui.createredstonelinkgui.link_relocated": "终端移动成功",
+  "gui.createredstonelinkgui.relocation_aborted": "移动已取消",
+  "gui.createredstonelinkgui.move_fail_obstructed": "目标位置被阻挡",
+  "gui.createredstonelinkgui.move_fail_no_surface": "没有可附着的表面",
+  "gui.createredstonelinkgui.move_fail_cant_survive": "无法附着在该表面上",
+  "gui.createredstonelinkgui.move_fail_surface": "连接了工厂仪表时无法改变面向",
+  "gui.createredstonelinkgui.move_fail_range": "目标超出范围"
+}

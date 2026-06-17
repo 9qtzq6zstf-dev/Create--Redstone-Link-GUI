@@ -7,6 +7,8 @@
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
 
+  "gui.createredstonelinkgui.send": "Send",
+  "gui.createredstonelinkgui.receive": "Receive",
   "gui.createredstonelinkgui.relocate": "Move this link",
   "gui.createredstonelinkgui.click_to_relocate": "Click to relocate the link",
   "gui.createredstonelinkgui.link_relocated": "Link relocated",
