@@ -2,6 +2,10 @@ package com.ggrgg.createredstonelinkgui.common.network;
 
 import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.SableHelper;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelBehaviour;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelConnection;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSupportBehaviour;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -21,8 +25,10 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -56,8 +62,6 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             // Verification: within interaction range
             // Entity#distanceToSqr is already corrected by Sable mixins — no companion needed
             if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > 64.0) return;
-            int maxRange = Config.MOVE_RANGE.get();
-            if (SableHelper.distanceSquared(level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(targetPos)) > maxRange * maxRange) return;
             if (!level.isLoaded(targetPos)) return;
 
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
@@ -66,6 +70,19 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             // Check that source has a LinkBehaviour (universal discriminant)
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
             if (sourceLink == null) return;
+
+            // Check if this block is connected to any factory gauges
+            FactoryPanelSupportBehaviour gaugeSupport = BlockEntityBehaviour.get(sourceBE, FactoryPanelSupportBehaviour.TYPE);
+            boolean hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
+
+            // Apply range limit — factory gauges enforce a hard 24-block limit
+            int maxRange = Config.MOVE_RANGE.get();
+            if (hasGaugeConnection) {
+                maxRange = Math.min(maxRange, 24);
+                for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels())
+                    if (!gaugePos.pos().closerThan(targetPos, 24)) return;
+            }
+            if (SableHelper.distanceSquared(level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(targetPos)) > maxRange * maxRange) return;
 
             BlockState sourceState = sourceBE.getBlockState();
             BlockState targetState = level.getBlockState(targetPos);
@@ -85,6 +102,13 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             // Preserve blockstate properties that aren't orientation-related
             newState = copyNonOrientationProperties(newState, sourceState);
 
+            // When connected to factory gauges, enforce same-surface constraint
+            if (hasGaugeConnection) {
+                Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
+                Direction newFace = newState.getValue(BlockStateProperties.FACING);
+                if (oldFace != newFace) return;
+            }
+
             // Validate survivability with the new orientation
             if (!newState.canSurvive(level, targetPos)) return;
 
@@ -100,6 +124,19 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             if (newBE != null) {
                 newBE.loadWithComponents(beTag, registries);
                 newBE.setChanged();
+            }
+
+            // Reconnect factory gauges to the new position
+            if (gaugeSupport != null && !inPlace) {
+                for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels()) {
+                    FactoryPanelBehaviour panel = FactoryPanelBehaviour.at(level, gaugePos);
+                    if (panel != null) {
+                        panel.targetedByLinks.remove(sourcePos);
+                        panel.targetedByLinks.put(targetPos,
+                            new FactoryPanelConnection(new FactoryPanelPosition(targetPos, gaugePos.slot()), 1));
+                        panel.blockEntity.notifyUpdate();
+                    }
+                }
             }
 
             level.sendBlockUpdated(targetPos, newState, newState, Block.UPDATE_ALL);
