@@ -10,5 +10,10 @@
   "gui.createredstonelinkgui.relocate": "Move this link",
   "gui.createredstonelinkgui.click_to_relocate": "Click to relocate the link",
   "gui.createredstonelinkgui.link_relocated": "Link relocated",
-  "gui.createredstonelinkgui.relocation_aborted": "Relocation aborted"
+  "gui.createredstonelinkgui.relocation_aborted": "Relocation aborted",
+  "gui.createredstonelinkgui.move_fail_obstructed": "Position is obstructed",
+  "gui.createredstonelinkgui.move_fail_no_surface": "No surface to attach to",
+  "gui.createredstonelinkgui.move_fail_cant_survive": "Cannot attach to that surface",
+  "gui.createredstonelinkgui.move_fail_surface": "Cannot change surface with factory gauge connected",
+  "gui.createredstonelinkgui.move_fail_range": "Target out of range"
 }

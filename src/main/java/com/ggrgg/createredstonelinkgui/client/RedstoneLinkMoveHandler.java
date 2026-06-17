@@ -3,6 +3,8 @@ package com.ggrgg.createredstonelinkgui.client;
 import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.SableHelper;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSupportBehaviour;
+import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.createmod.catnip.outliner.Outliner;
@@ -15,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult.Type;
@@ -29,6 +32,7 @@ public class RedstoneLinkMoveHandler {
     private static BlockPos validTarget;
     private static Direction validFace;
     private static int moveRange;
+    private static String invalidReason;
 
     public static void startRelocating(BlockPos pos) {
         Minecraft mc = Minecraft.getInstance();
@@ -41,6 +45,7 @@ public class RedstoneLinkMoveHandler {
         active = true;
         validTarget = null;
         validFace = null;
+        invalidReason = null;
         moveRange = Config.MOVE_RANGE.get();
     }
 
@@ -53,7 +58,7 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Check distance (sublevel-aware — accounts for coordinate offsets)
+        // Check player distance (sublevel-aware)
         if (SableHelper.distanceSquared(mc.level, mc.player.blockPosition().getCenter(), Vec3.atCenterOf(sourcePos)) > 256.0) {
             mc.player.displayClientMessage(Component.empty(), true);
             cancel();
@@ -73,6 +78,7 @@ public class RedstoneLinkMoveHandler {
         // Evaluate potential target
         validTarget = null;
         validFace = null;
+        invalidReason = null;
 
         if (!(mc.hitResult instanceof BlockHitResult bhr) || bhr.getType() == Type.MISS)
             return;
@@ -84,33 +90,73 @@ public class RedstoneLinkMoveHandler {
                 .add(Vec3.atLowerCornerOf(clickedFace.getNormal())
                         .scale(1 / 32f));
         BlockPos pos = BlockPos.containing(offsetPos);
-
         BlockState targetState = mc.level.getBlockState(pos);
 
-        // If moving to a new position, it must be air or replaceable
-        // If moving in place, allow it (orientation change only)
-        if (!pos.equals(sourcePos) && !targetState.isAir() && !targetState.canBeReplaced()) return;
+        // Check: moving in place (always valid for reorient)
+        boolean inPlace = pos.equals(sourcePos);
 
-        // Dynamically determine the new state via the block's own placement logic
+        // Check: obstructed
+        if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) {
+            invalidReason = "move_fail_obstructed";
+            showRedOutline(pos);
+            return;
+        }
+
+        // Check: placement logic
         BlockPlaceContext placeContext = new BlockPlaceContext(mc.level, mc.player, InteractionHand.MAIN_HAND,
                 ItemStack.EMPTY, new BlockHitResult(Vec3.atCenterOf(pos), clickedFace, pos, false));
         BlockState newState = sourceState.getBlock().getStateForPlacement(placeContext);
-        if (newState == null) return;
+        if (newState == null) {
+            invalidReason = "move_fail_no_surface";
+            showRedOutline(pos);
+            return;
+        }
 
-        // Validate survivability with the new orientation
-        if (!newState.canSurvive(mc.level, pos)) return;
+        // Check: survivability
+        if (!newState.canSurvive(mc.level, pos)) {
+            invalidReason = "move_fail_cant_survive";
+            showRedOutline(pos);
+            return;
+        }
 
-        // Must be within range (sublevel-aware)
-        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > moveRange * moveRange) return;
+        // Check: factory gauge surface constraint
+        var be = mc.level.getBlockEntity(sourcePos);
+        if (be != null) {
+            var gaugeSupport = BlockEntityBehaviour.get(be, FactoryPanelSupportBehaviour.TYPE);
+            if (gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty()) {
+                Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
+                Direction newFace = newState.getValue(BlockStateProperties.FACING);
+                if (oldFace != newFace) {
+                    invalidReason = "move_fail_surface";
+                    showRedOutline(pos);
+                    return;
+                }
+            }
+        }
 
+        // Check: range
+        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > moveRange * moveRange) {
+            invalidReason = "move_fail_range";
+            showRedOutline(pos);
+            return;
+        }
+
+        // All checks passed — valid target
         validTarget = pos;
         validFace = clickedFace;
 
-        // Show ghost outline at target
+        // Show white ghost outline at target
         Outliner.getInstance()
                 .showAABB("target", new AABB(pos))
                 .colored(0xeeeeee)
                 .disableLineNormals()
+                .lineWidth(1 / 16f);
+    }
+
+    private static void showRedOutline(BlockPos pos) {
+        Outliner.getInstance()
+                .showAABB("target", new AABB(pos))
+                .colored(0xff4444)
                 .lineWidth(1 / 16f);
     }
 
@@ -122,19 +168,19 @@ public class RedstoneLinkMoveHandler {
         if (mc.player.isShiftKeyDown()) {
             validTarget = null;
             validFace = null;
+            invalidReason = null;
         }
 
         if (validTarget != null && validFace != null) {
-            // Send move packet to server with clicked face for orientation
             PacketDistributor.sendToServer(new RedstoneLinkMovePayload(sourcePos, validTarget, validFace));
-
             mc.player.displayClientMessage(
-                    Component.translatable("gui.createredstonelinkgui.link_relocated"),
-                    true);
+                    Component.translatable("gui.createredstonelinkgui.link_relocated"), true);
+        } else if (invalidReason != null) {
+            mc.player.displayClientMessage(
+                    Component.translatable("gui.createredstonelinkgui." + invalidReason), true);
         } else {
             mc.player.displayClientMessage(
-                    Component.translatable("gui.createredstonelinkgui.relocation_aborted"),
-                    true);
+                    Component.translatable("gui.createredstonelinkgui.relocation_aborted"), true);
         }
 
         cancel();
@@ -147,6 +193,7 @@ public class RedstoneLinkMoveHandler {
         sourceState = null;
         validTarget = null;
         validFace = null;
+        invalidReason = null;
         moveRange = 0;
     }
 
