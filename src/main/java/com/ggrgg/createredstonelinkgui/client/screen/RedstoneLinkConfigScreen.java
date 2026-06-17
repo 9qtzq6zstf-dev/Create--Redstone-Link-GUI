@@ -112,7 +112,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             ICON_SIZE, ICON_SIZE,
             OVERLAY_TEXTURE,
             MOVE_UV_X, MOVE_UV_Y,
-            Component.translatable("gui.createredstonelinkgui.click_to_relocate"),
+            Component.translatable("gui.createredstonelinkgui.relocate"),
             (btn) -> {
                 RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
                 this.minecraft.setScreen(null);
