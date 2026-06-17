@@ -59,9 +59,6 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             BlockPos targetPos = payload.targetPos();
             Direction clickedFace = payload.clickedFace();
 
-            // Verification: within interaction range
-            // Entity#distanceToSqr is already corrected by Sable mixins — no companion needed
-            if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > 64.0) return;
             if (!level.isLoaded(targetPos)) return;
 
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
@@ -75,13 +72,16 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             FactoryPanelSupportBehaviour gaugeSupport = BlockEntityBehaviour.get(sourceBE, FactoryPanelSupportBehaviour.TYPE);
             boolean hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
 
-            // Apply range limit — factory gauges enforce a hard 24-block limit
+            // Compute range limit — factory gauges enforce a hard 24-block limit
             int maxRange = Config.MOVE_RANGE.get();
             if (hasGaugeConnection) {
                 maxRange = Math.min(maxRange, 24);
                 for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels())
                     if (!gaugePos.pos().closerThan(targetPos, 24)) return;
             }
+
+            // Verification: player must be within the configured move range of source
+            if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > maxRange * maxRange) return;
             if (SableHelper.distanceSquared(level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(targetPos)) > maxRange * maxRange) return;
 
             BlockState sourceState = sourceBE.getBlockState();

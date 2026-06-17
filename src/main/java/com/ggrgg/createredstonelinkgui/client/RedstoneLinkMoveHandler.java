@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.client;
 import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.SableHelper;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
+import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelPosition;
 import com.simibubi.create.content.logistics.factoryBoard.FactoryPanelSupportBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -58,13 +59,6 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Check player distance (sublevel-aware)
-        if (SableHelper.distanceSquared(mc.level, mc.player.blockPosition().getCenter(), Vec3.atCenterOf(sourcePos)) > 256.0) {
-            mc.player.displayClientMessage(Component.empty(), true);
-            cancel();
-            return;
-        }
-
         // Show outline on source block
         Outliner.getInstance()
                 .showAABB(sourcePos, new AABB(sourcePos))
@@ -85,14 +79,11 @@ public class RedstoneLinkMoveHandler {
 
         Direction clickedFace = bhr.getDirection();
 
-        // Calculate the target position (the block face the player is looking at)
         Vec3 offsetPos = bhr.getLocation()
                 .add(Vec3.atLowerCornerOf(clickedFace.getNormal())
                         .scale(1 / 32f));
         BlockPos pos = BlockPos.containing(offsetPos);
         BlockState targetState = mc.level.getBlockState(pos);
-
-        // Check: moving in place (always valid for reorient)
         boolean inPlace = pos.equals(sourcePos);
 
         // Check: obstructed
@@ -119,11 +110,19 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Check: factory gauge surface constraint
+        // Determine effective range (mirrors server logic)
+        int effectiveRange = moveRange;
+        boolean hasGaugeConnection = false;
+
         var be = mc.level.getBlockEntity(sourcePos);
         if (be != null) {
             var gaugeSupport = BlockEntityBehaviour.get(be, FactoryPanelSupportBehaviour.TYPE);
-            if (gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty()) {
+            hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
+
+            if (hasGaugeConnection) {
+                effectiveRange = Math.min(effectiveRange, 24);
+
+                // Check: gauge same-surface constraint
                 Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
                 Direction newFace = newState.getValue(BlockStateProperties.FACING);
                 if (oldFace != newFace) {
@@ -131,21 +130,36 @@ public class RedstoneLinkMoveHandler {
                     showRedOutline(pos);
                     return;
                 }
+
+                // Check: each gauge position within 24 blocks of target
+                for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels()) {
+                    if (!gaugePos.pos().closerThan(pos, 24)) {
+                        invalidReason = "move_fail_range";
+                        showRedOutline(pos);
+                        return;
+                    }
+                }
             }
         }
 
-        // Check: range
-        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > moveRange * moveRange) {
+        // Check: player proximity to source (uses same range as server)
+        if (mc.player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > effectiveRange * effectiveRange) {
             invalidReason = "move_fail_range";
             showRedOutline(pos);
             return;
         }
 
-        // All checks passed — valid target
+        // Check: source-to-target distance (sublevel-aware)
+        if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > effectiveRange * effectiveRange) {
+            invalidReason = "move_fail_range";
+            showRedOutline(pos);
+            return;
+        }
+
+        // All checks passed
         validTarget = pos;
         validFace = clickedFace;
 
-        // Show white ghost outline at target
         Outliner.getInstance()
                 .showAABB("target", new AABB(pos))
                 .colored(0xeeeeee)
