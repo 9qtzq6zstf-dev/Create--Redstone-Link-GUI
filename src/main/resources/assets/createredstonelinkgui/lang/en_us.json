@@ -10,5 +10,8 @@
   "gui.createredstonelinkgui.relocate": "Move this link",
   "gui.createredstonelinkgui.click_to_relocate": "Click to relocate the link",
   "gui.createredstonelinkgui.link_relocated": "Link relocated",
-  "gui.createredstonelinkgui.relocation_aborted": "Relocation aborted"
+  "gui.createredstonelinkgui.relocation_aborted": "Relocation aborted",
+
+  "gui.createredstonelinkgui.frequencies_settings": "Frequencies settings",
+  "gui.createredstonelinkgui.save_and_close": "Save and close"
 }
