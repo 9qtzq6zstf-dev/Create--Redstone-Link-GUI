@@ -1,5 +1,11 @@
 ## Changelog
 
+# 1.21.1-1.5.0
+
+- Preserve factory gauge connection upon movement
+- 中文翻译
+- fix badly implemented distance check
+
 # 1.21.1-1.4.1
 
 - Sable compatibility for the relocation feature
