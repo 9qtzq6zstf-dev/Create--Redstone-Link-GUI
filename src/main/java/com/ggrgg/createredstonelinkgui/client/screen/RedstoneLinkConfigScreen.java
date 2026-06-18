@@ -4,8 +4,11 @@ import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
+import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -175,6 +178,16 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int titleX = contentLeft + (OVERLAY_WIDTH - titleWidth) / 2;
         int titleY = contentTop + TITLE_Y_OFFSET;
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
+
+        // === 3D 方块预览 ===
+        PoseStack ms = graphics.pose();
+        ms.pushPose();
+        ms.translate(0, 0, 10);
+        GuiGameElement.of(AllBlocks.REDSTONE_LINK.asStack())
+            .scale(4)
+            .at(0, 0, -200)
+            .render(graphics, x + 195, contentTop + 40);
+        ms.popPose();
     }
 
     // ==================== 隐藏原版标签 ====================
