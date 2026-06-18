@@ -43,7 +43,7 @@ public class RedstoneLinkToggleWidget extends AbstractSimiWidget {
         boolean recv = isReceiver.getAsBoolean();
 
         // Update tooltip based on current state
-        toolTip = List.of(Component.literal(recv ? "Receive" : "Send"));
+        toolTip = List.of(Component.translatable(recv ? "gui.createredstonelinkgui.receive" : "gui.createredstonelinkgui.send"));
 
         // === "S" label (left) ===
         graphics.drawString(font, "S", getX() + 3, getY() + 4, 0xFFFFFFFF);
