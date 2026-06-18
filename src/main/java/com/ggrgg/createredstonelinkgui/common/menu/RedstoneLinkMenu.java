@@ -87,19 +87,19 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         }
 
         // Add custom Ghost Recipe Slots
-        this.addSlot(new GhostRecipeSlot(0, 54, 26, () -> getFrequencyItem(0), this::setFrequencyItem));
-        this.addSlot(new GhostRecipeSlot(1, 108, 26, () -> getFrequencyItem(1), this::setFrequencyItem));
+        this.addSlot(new GhostRecipeSlot(0, 98, 34, () -> getFrequencyItem(0), this::setFrequencyItem));
+        this.addSlot(new GhostRecipeSlot(1, 134, 34, () -> getFrequencyItem(1), this::setFrequencyItem));
 
         // Player Main Inventory Layout (Rows 1-3)
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
-                this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col + row * 9 + 9, 48 + col * 18, 112 + row * 18));
             }
         }
 
         // Player Hotbar Layout (Row 4)
         for (int col = 0; col < 9; ++col) {
-            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col, 8 + col * 18, 142));
+            this.addSlot(new net.minecraft.world.inventory.Slot(playerInventory, col, 48 + col * 18, 170));
         }
     }
 

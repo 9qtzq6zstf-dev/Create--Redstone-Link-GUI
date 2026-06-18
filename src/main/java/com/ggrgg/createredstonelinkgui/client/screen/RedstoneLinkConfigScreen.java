@@ -2,13 +2,13 @@ package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
-import com.simibubi.create.foundation.gui.AllIcons;
-import com.simibubi.create.foundation.gui.widget.IconButton;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
@@ -19,30 +19,79 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLinkMenu> {
 
-    private static final ResourceLocation BASE_TEXTURE = ResourceLocation.withDefaultNamespace("textures/gui/container/inventory.png");
-    private static final ResourceLocation SLOT_SPRITE = ResourceLocation.withDefaultNamespace("container/slot");
+    // ==================== 纹理 ====================
+    private static final ResourceLocation BASE_TEXTURE = ResourceLocation.parse("create:textures/gui/player_inventory.png");
+    private static final ResourceLocation OVERLAY_TEXTURE = ResourceLocation.parse("createredstonelinkgui:textures/redstone_link.png");
 
+    // ==================== 尺寸常量 ====================
+    private static final int OVERLAY_WIDTH = 181;
+    private static final int OVERLAY_HEIGHT = 88;
+    private static final int BACKPACK_WIDTH = 175;
+    private static final int BACKPACK_HEIGHT = 108;
+    private static final int CONTENT_TOP_OFFSET = 6;
+    private static final int BACKPACK_TOP_OFFSET = 94;
+
+    // ==================== 覆盖层纹理偏移 ====================
+    private static final int UV_OFFSET_X = 16;
+    private static final int UV_OFFSET_Y = 160;
+
+    // ==================== 槽位纹理坐标 ====================
+    private static final int SLOT1_UV_X = 77;
+    private static final int SLOT1_UV_Y = 188;
+    private static final int SLOT2_UV_X = 113;
+    private static final int SLOT2_UV_Y = 188;
+    private static final int SLOT_SIZE = 16;
+
+    // ==================== 按钮纹理坐标 ====================
+    private static final int MOVE_UV_X = 26;
+    private static final int MOVE_UV_Y = 223;
+    private static final int BACK_UV_X = 165;
+    private static final int BACK_UV_Y = 223;
+    private static final int ICON_SIZE = 18;
+
+    // ==================== 标题位置偏移（相对于覆盖层左上角） ====================
+    private static final int TITLE_Y_OFFSET = 4; // Y 坐标偏移
+
+    // ==================== 槽位边界 ====================
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
 
+    // ==================== 构造函数 ====================
     public RedstoneLinkConfigScreen(RedstoneLinkMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageWidth = 256;
+        this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
+    // ==================== 初始化 ====================
     @Override
     protected void init() {
         super.init();
-        // Sets precise pixel alignment bounding limits for JEI drag target calculations
-        this.slot1Bounds = new Rect2i(this.leftPos + 53, this.topPos + 25, 18, 18);
-        this.slot2Bounds = new Rect2i(this.leftPos + 107, this.topPos + 25, 18, 18);
 
-        // Toggle switch widget — only add for RedstoneLinkBlock
+        int x = (this.width - this.imageWidth) / 2;
+        int y = (this.height - this.imageHeight) / 2;
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentTop = y + CONTENT_TOP_OFFSET;
+
+        // 槽位边界
+        this.slot1Bounds = new Rect2i(
+            contentLeft + (SLOT1_UV_X - UV_OFFSET_X),
+            contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
+            SLOT_SIZE,
+            SLOT_SIZE
+        );
+        this.slot2Bounds = new Rect2i(
+            contentLeft + (SLOT2_UV_X - UV_OFFSET_X),
+            contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
+            SLOT_SIZE,
+            SLOT_SIZE
+        );
+
+        // === SR 切换按钮 ===
         if (this.menu.isRedstoneLink()) {
             this.addRenderableWidget(new RedstoneLinkToggleWidget(
-                this.leftPos + 14, this.topPos + 58,
+                contentLeft + 65, contentTop + 64,
                 this.menu.getPos(),
                 () -> {
                     var level = this.minecraft.level;
@@ -57,33 +106,46 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             ));
         }
 
-        // "Move this link" button — works for any block with LinkBehaviour
-        // Centered horizontally in the overlay area (x+7 to x+169), aligned vertically with the toggle
-        int buttonX = this.leftPos + 80;
-        IconButton relocateButton = new IconButton(buttonX, this.topPos + 58, AllIcons.I_MOVE_GAUGE);
-        relocateButton.withCallback(() -> {
-            RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
-            this.minecraft.setScreen(null);
-        });
-        relocateButton.setToolTip(Component.translatable("gui.createredstonelinkgui.relocate"));
-        this.addRenderableWidget(relocateButton);
+        // === Move 按钮 ===
+        ImageButton moveButton = new ImageButton(
+            contentLeft + 10, contentTop + 63,
+            ICON_SIZE, ICON_SIZE,
+            OVERLAY_TEXTURE,
+            MOVE_UV_X, MOVE_UV_Y,
+            Component.translatable("gui.createredstonelinkgui.relocate"),
+            (btn) -> {
+                RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
+                this.minecraft.setScreen(null);
+            }
+        );
+        this.addRenderableWidget(moveButton);
+
+        // === 返回按钮 ===
+        ImageButton backButton = new ImageButton(
+            contentLeft + 149, contentTop + 63,
+            ICON_SIZE, ICON_SIZE,
+            OVERLAY_TEXTURE,
+            BACK_UV_X, BACK_UV_Y,
+            Component.translatable("gui.createredstonelinkgui.save_and_close"),
+            (btn) -> {
+                this.minecraft.setScreen(null);
+            }
+        );
+        this.addRenderableWidget(backButton);
     }
 
-    /**
-     * Fired by JEI drag actions. Mutates local behavior for immediate zero-latency feedback
-     * while pushing network updates up to the server cluster.
-     */
+    // ==================== JEI/EMI 拖拽回调 ====================
     public void updateFrequencySlot(int slotIndex, ItemStack stack) {
         if (this.menu instanceof RedstoneLinkMenu customMenu) {
             var behaviour = customMenu.getBehaviour();
             if (behaviour != null) {
-                // High-Responsiveness: Set immediately on client before server response returns
                 RedstoneLinkMenu.applyFrequencyChangeDirect(behaviour, slotIndex == 0, stack);
             }
             PacketDistributor.sendToServer(new RedstoneLinkFrequencyPayload(customMenu.getPos(), stack, slotIndex));
         }
     }
 
+    // ==================== 渲染 ====================
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
@@ -91,37 +153,67 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         this.renderTooltip(graphics, mouseX, mouseY);
     }
 
+    // ==================== 背景绘制 ====================
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        graphics.blit(BASE_TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-        
-        // Draw uniform layout spacing canvas overlay
-        graphics.fill(x + 7, y + 7, x + 169, y + 82, 0xFFC6C6C6);
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentTop = y + CONTENT_TOP_OFFSET;
 
-        // First frequency slot — slot sprite first, then 4px border outside the slot
-        int s1x = this.slot1Bounds.getX();
-        int s1y = this.slot1Bounds.getY();
-        graphics.blitSprite(SLOT_SPRITE, s1x, s1y, 18, 18);
-        graphics.fill(s1x - 4, s1y - 4, s1x + 22, s1y, 0xFF7D2D3B);       // top
-        graphics.fill(s1x - 4, s1y + 18, s1x + 22, s1y + 22, 0xFF7D2D3B); // bottom
-        graphics.fill(s1x - 4, s1y, s1x, s1y + 18, 0xFF7D2D3B);           // left
-        graphics.fill(s1x + 18, s1y, s1x + 22, s1y + 18, 0xFF7D2D3B);     // right
+        // 绘制覆盖层
+        graphics.blit(OVERLAY_TEXTURE, contentLeft, contentTop, UV_OFFSET_X, UV_OFFSET_Y, OVERLAY_WIDTH, OVERLAY_HEIGHT, 256, 256);
 
-        // Second frequency slot — slot sprite first, then 4px border outside the slot
-        int s2x = this.slot2Bounds.getX();
-        int s2y = this.slot2Bounds.getY();
-        graphics.blitSprite(SLOT_SPRITE, s2x, s2y, 18, 18);
-        graphics.fill(s2x - 4, s2y - 4, s2x + 22, s2y, 0xFF5059AB);       // top
-        graphics.fill(s2x - 4, s2y + 18, s2x + 22, s2y + 22, 0xFF5059AB); // bottom
-        graphics.fill(s2x - 4, s2y, s2x, s2y + 18, 0xFF5059AB);           // left
-        graphics.fill(s2x + 18, s2y, s2x + 22, s2y + 18, 0xFF5059AB);     // right
+        // 绘制背包
+        int backpackX = x + (this.imageWidth - BACKPACK_WIDTH) / 2;
+        int backpackY = y + BACKPACK_TOP_OFFSET;
+        graphics.blit(BASE_TEXTURE, backpackX, backpackY, 0, 0, BACKPACK_WIDTH, BACKPACK_HEIGHT, 256, 256);
+
+        // === 绘制标题（居中，使用 drawString） ===
+        Font font = this.minecraft.font;
+        Component titleText = Component.translatable("gui.createredstonelinkgui.frequencies_settings");
+        String titleString = titleText.getString();
+        int titleWidth = font.width(titleString);
+        int titleX = contentLeft + (OVERLAY_WIDTH - titleWidth) / 2;
+        int titleY = contentTop + TITLE_Y_OFFSET;
+        graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
     }
 
+    // ==================== 隐藏原版标签 ====================
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        // No labels — all text removed
+        // 不绘制任何标签
+    }
+
+    // ==================== 自定义 ImageButton 类 ====================
+    private static class ImageButton extends Button {
+        private final ResourceLocation texture;
+        private final int u, v;
+        private final int texWidth, texHeight;
+        private final Component tooltip;
+        private static final int HOVER_COLOR = 0x22_1500FF;
+
+        public ImageButton(int x, int y, int width, int height, ResourceLocation texture, int u, int v, Component tooltip, OnPress onPress) {
+            super(x, y, width, height, Component.empty(), onPress, DEFAULT_NARRATION);
+            this.texture = texture;
+            this.u = u;
+            this.v = v;
+            this.texWidth = 256;
+            this.texHeight = 256;
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            graphics.blit(texture, getX(), getY(), u, v, width, height, texWidth, texHeight);
+            if (isHovered()) {
+                graphics.fill(getX(), getY(), getX() + width, getY() + height, HOVER_COLOR);
+                if (tooltip != null) {
+                    Font font = net.minecraft.client.Minecraft.getInstance().font;
+                    graphics.renderTooltip(font, tooltip, mouseX, mouseY);
+                }
+            }
+        }
     }
 }
