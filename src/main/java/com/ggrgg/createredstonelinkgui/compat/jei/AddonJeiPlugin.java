@@ -1,9 +1,14 @@
 package com.ggrgg.createredstonelinkgui.compat.jei;
 
+import java.util.List;
+
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.resources.ResourceLocation;
 
 @JeiPlugin
@@ -18,5 +23,13 @@ public class AddonJeiPlugin implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGhostIngredientHandler(RedstoneLinkConfigScreen.class, new RedstoneLinkGhostHandler());
+        registration.addGenericGuiContainerHandler(RedstoneLinkConfigScreen.class, new IGuiContainerHandler<RedstoneLinkConfigScreen>() {
+            @Override
+            public List<Rect2i> getGuiExtraAreas(RedstoneLinkConfigScreen screen) {
+                return screen.blockPreviewBounds != null
+                    ? List.of(screen.blockPreviewBounds)
+                    : List.of();
+            }
+        });
     }
 }
