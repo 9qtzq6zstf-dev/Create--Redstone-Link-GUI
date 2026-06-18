@@ -183,26 +183,31 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
 
     private class SkullButton extends Button {
+        private ItemStack cachedStack;
+        private java.util.UUID lastOwnerId;
+
         public SkullButton(int x, int y, OnPress onPress) {
             super(x, y, ICON_SIZE, ICON_SIZE, Component.empty(), onPress, DEFAULT_NARRATION);
+            this.cachedStack = new ItemStack(Items.SKELETON_SKULL);
         }
 
         @Override
         public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            ItemStack stack;
             Object b = menu.getBehaviour();
             if (b != null) {
                 var owner = VoidLinkHelper.getOwner(b);
-                if (owner != null) {
-                    stack = new ItemStack(Items.PLAYER_HEAD);
-                    stack.set(DataComponents.PROFILE, new ResolvableProfile(owner));
-                } else {
-                    stack = new ItemStack(Items.SKELETON_SKULL);
+                java.util.UUID currentId = (owner != null) ? owner.getId() : null;
+                if (!java.util.Objects.equals(currentId, lastOwnerId)) {
+                    lastOwnerId = currentId;
+                    if (owner != null) {
+                        cachedStack = new ItemStack(Items.PLAYER_HEAD);
+                        cachedStack.set(DataComponents.PROFILE, new ResolvableProfile(owner));
+                    } else {
+                        cachedStack = new ItemStack(Items.SKELETON_SKULL);
+                    }
                 }
-            } else {
-                stack = new ItemStack(Items.SKELETON_SKULL);
             }
-            graphics.renderItem(stack, getX(), getY());
+            graphics.renderItem(cachedStack, getX(), getY());
         }
     }
 
