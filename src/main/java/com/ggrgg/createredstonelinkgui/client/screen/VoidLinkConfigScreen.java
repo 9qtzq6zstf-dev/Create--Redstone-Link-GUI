@@ -54,7 +54,6 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
     public Rect2i blockPreviewBounds;
-    private Button claimButton;
 
     public VoidLinkConfigScreen(VoidLinkMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -83,8 +82,8 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
         );
         this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
-        // Claim button — text updates in renderBg
-        this.claimButton = new Button.Builder(Component.literal("Claim"), btn -> {
+        // Claim skull button — renders player head or skeleton skull
+        SkullButton skullBtn = new SkullButton(contentLeft + 81, contentTop + 63, btn -> {
             Object b = this.menu.getBehaviour();
             if (b != null) {
                 var owner = VoidLinkHelper.getOwner(b);
@@ -92,8 +91,8 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
                     PacketDistributor.sendToServer(new VoidLinkClaimPayload(this.menu.getPos()));
                 }
             }
-        }).bounds(contentLeft + 63, contentTop + 8, 56, 12).build();
-        this.addRenderableWidget(claimButton);
+        });
+        this.addRenderableWidget(skullBtn);
 
         // Move button
         ImageButton moveButton = new ImageButton(
@@ -160,22 +159,6 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
         int titleY = contentTop + TITLE_Y_OFFSET;
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
 
-        // Update claim button text each frame
-        String claimStatus = "Unclaimed";
-        if (claimButton != null) {
-            Object b = this.menu.getBehaviour();
-            if (b != null) {
-                var owner = VoidLinkHelper.getOwner(b);
-                if (owner != null && owner.getName() != null) {
-                    claimStatus = owner.getName();
-                    // Render player head next to claim button
-                    ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-                    head.set(DataComponents.PROFILE, new ResolvableProfile(owner));
-                    graphics.renderItem(head, contentLeft + 50, contentTop + 7);
-                }
-            }
-            claimButton.setMessage(Component.literal(claimStatus));
-        }
 
         // Block preview
         ItemStack blockStack = ItemStack.EMPTY;
@@ -198,6 +181,30 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {}
+
+    private class SkullButton extends Button {
+        public SkullButton(int x, int y, OnPress onPress) {
+            super(x, y, ICON_SIZE, ICON_SIZE, Component.empty(), onPress, DEFAULT_NARRATION);
+        }
+
+        @Override
+        public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+            ItemStack stack;
+            Object b = menu.getBehaviour();
+            if (b != null) {
+                var owner = VoidLinkHelper.getOwner(b);
+                if (owner != null) {
+                    stack = new ItemStack(Items.PLAYER_HEAD);
+                    stack.set(DataComponents.PROFILE, new ResolvableProfile(owner));
+                } else {
+                    stack = new ItemStack(Items.SKELETON_SKULL);
+                }
+            } else {
+                stack = new ItemStack(Items.SKELETON_SKULL);
+            }
+            graphics.renderItem(stack, getX(), getY());
+        }
+    }
 
     private static class ImageButton extends Button {
         private final ResourceLocation texture;
