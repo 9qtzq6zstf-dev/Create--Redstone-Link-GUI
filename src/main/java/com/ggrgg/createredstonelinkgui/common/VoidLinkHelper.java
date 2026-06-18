@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.common;
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -16,6 +17,7 @@ public class VoidLinkHelper {
     private static Method testHitMethod;
     private static Method getOwnerMethod;
     private static Method setOwnerMethod;
+    private static Method canInteractMethod;
 
     private static void check() {
         if (checked) return;
@@ -26,6 +28,7 @@ public class VoidLinkHelper {
             testHitMethod = vlbClass.getMethod("testHit", int.class, Vec3.class);
             getOwnerMethod = vlbClass.getMethod("getOwner");
             setOwnerMethod = vlbClass.getMethod("setOwner", GameProfile.class);
+            canInteractMethod = vlbClass.getMethod("canInteract", Player.class);
             blockEntityBehaviourGet = com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour.class
                 .getMethod("get", net.minecraft.world.level.BlockGetter.class, BlockPos.class,
                     com.simibubi.create.foundation.blockEntity.behaviour.BehaviourType.class);
@@ -56,6 +59,14 @@ public class VoidLinkHelper {
             return (GameProfile) getOwnerMethod.invoke(behaviour);
         } catch (Throwable ignored) {}
         return null;
+    }
+
+    public static boolean canInteract(Object behaviour, Player player) {
+        if (behaviour == null || canInteractMethod == null) return true;
+        try {
+            return (boolean) canInteractMethod.invoke(behaviour, player);
+        } catch (Throwable ignored) {}
+        return true;
     }
 
     public static void setOwner(Object behaviour, GameProfile owner) {

@@ -47,10 +47,12 @@ public class CommonEventHandler {
         if (behaviour != null) {
             hitFrequencySlot = behaviour.testHit(true, hitLocation) || behaviour.testHit(false, hitLocation);
         } else {
-            // Check for Create Utilities' VoidLinkBehaviour
+            // Check for Create Utilities' VoidLinkBehaviour — accept all slots (0, 1, 2)
             Object vlb = VoidLinkHelper.getBehaviour(level, pos);
             if (vlb != null) {
-                hitFrequencySlot = VoidLinkHelper.isHitOnFrequencySlot(vlb, hitLocation);
+                // Check ownership before allowing menu
+                if (!VoidLinkHelper.canInteract(vlb, player)) return;
+                hitFrequencySlot = true;
                 isVoidLink = true;
             }
         }

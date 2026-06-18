@@ -38,7 +38,6 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
             Level level = player.level();
             BlockPos pos = payload.pos();
 
-            // Verification check: Stop packets sent via malicious clients across distances
             if (player.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) > 64.0) return;
 
             var be = level.getBlockEntity(pos);
@@ -52,6 +51,8 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
                     // Try VoidLinkBehaviour (Create Utilities)
                     Object vlb = com.ggrgg.createredstonelinkgui.common.VoidLinkHelper.getBehaviour(level, pos);
                     if (vlb != null) {
+                        // Ownership check — non-owners cannot change frequencies
+                        if (!com.ggrgg.createredstonelinkgui.common.VoidLinkHelper.canInteract(vlb, player)) return;
                         VoidLinkMenu.applyFrequencyChangeDirect(vlb, payload.slotIndex() == 0, payload.selectedItem());
                         be.setChanged();
                         level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
