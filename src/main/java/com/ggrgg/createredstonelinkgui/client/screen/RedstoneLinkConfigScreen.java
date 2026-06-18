@@ -69,10 +69,8 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
-        int x = (this.width - this.imageWidth) / 2;
-        int y = (this.height - this.imageHeight) / 2;
-        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
-        int contentTop = y + CONTENT_TOP_OFFSET;
+        int contentLeft = (this.width - OVERLAY_WIDTH) / 2;
+        int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
         // 槽位边界
         this.slot1Bounds = new Rect2i(
@@ -173,8 +171,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         // === 绘制标题（居中，使用 drawString） ===
         Font font = this.minecraft.font;
         Component titleText = Component.translatable("gui.createredstonelinkgui.frequencies_settings");
-        String titleString = titleText.getString();
-        int titleWidth = font.width(titleString);
+        int titleWidth = font.width(titleText);
         int titleX = contentLeft + (OVERLAY_WIDTH - titleWidth) / 2;
         int titleY = contentTop + TITLE_Y_OFFSET;
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
