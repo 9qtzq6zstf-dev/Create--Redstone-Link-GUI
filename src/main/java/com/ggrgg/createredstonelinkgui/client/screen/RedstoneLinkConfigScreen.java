@@ -189,14 +189,16 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             var blockItem = blockState.getBlock().asItem();
             if (blockItem != null) blockStack = new ItemStack(blockItem);
         }
-        PoseStack ms = graphics.pose();
-        ms.pushPose();
-        ms.translate(0, 0, 10);
-        GuiGameElement.of(blockStack)
-            .scale(4)
-            .at(0, 0, -200)
-            .render(graphics, x + 215, contentTop + 30);
-        ms.popPose();
+        if (!blockStack.isEmpty()) {
+            PoseStack ms = graphics.pose();
+            ms.pushPose();
+            ms.translate(0, 0, 10);
+            GuiGameElement.of(blockStack)
+                .scale(4)
+                .at(0, 0, -200)
+                .render(graphics, x + 215, contentTop + 30);
+            ms.popPose();
+        }
     }
 
     // ==================== 隐藏原版标签 ====================
