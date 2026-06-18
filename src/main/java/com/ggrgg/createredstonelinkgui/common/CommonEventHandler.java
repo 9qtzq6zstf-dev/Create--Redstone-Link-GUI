@@ -68,16 +68,4 @@ public class CommonEventHandler {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.sidedSuccess(level.isClientSide()));
     }
-
-    // == Legacy Aeronautics-specific string check (kept for reference) ==
-    //
-    // If you need to restrict to specific blocks rather than any LinkBehaviour holder,
-    // uncomment the method below and add `|| isAeronauticsReceiverClass(state)` to the
-    // condition above, alongside restoring a `BlockState state` variable.
-    //
-    // private static boolean isAeronauticsReceiverClass(BlockState state) {
-    //     String className = state.getBlock().getClass().getName();
-    //     return "dev.simulated_team.simulated.content.blocks.redstone.modulating_receiver.ModulatingLinkedReceiverBlock".equals(className)
-    //         || "dev.simulated_team.simulated.content.blocks.redstone.directional_receiver.DirectionalLinkedReceiverBlock".equals(className);
-    // }
 }

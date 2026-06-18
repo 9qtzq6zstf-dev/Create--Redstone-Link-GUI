@@ -1,11 +1,14 @@
 {
-  "createredstonelinkgui.configuration.title": "机械动力：无线红石终端GUI配置",
+  "createredstonelinkgui.configuration.title": "机械动力：无线红石信号终端GUI",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml": "通用",
   "createredstonelinkgui.configuration.section.createredstonelinkgui.common.toml.title": "通用",
   "createredstonelinkgui.configuration.moveRange": "最大移动范围",
   "createredstonelinkgui.configuration.moveRange.tooltip": "终端可移动的最大距离",
 
   "container.createredstonelinkgui.redstone_link_menu": "无线红石终端频率",
+
+  "gui.createredstonelinkgui.frequencies_settings": "频率设置",
+  "gui.createredstonelinkgui.save_and_close": "保存并关闭",
 
   "gui.createredstonelinkgui.send": "发送",
   "gui.createredstonelinkgui.receive": "接收",

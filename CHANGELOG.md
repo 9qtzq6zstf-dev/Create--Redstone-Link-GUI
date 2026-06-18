@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.6.0
+
+- Add actual texture to GUI, consistent with create mod GUIs(credit to 咖喱之恶魔)
+
 # 1.21.1-1.5.0
 
 - Preserve factory gauge connection upon movement
