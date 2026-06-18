@@ -58,6 +58,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     // ==================== 槽位边界 ====================
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
+    public Rect2i blockPreviewBounds;
 
     // ==================== 构造函数 ====================
     public RedstoneLinkConfigScreen(RedstoneLinkMenu menu, Inventory playerInv, Component title) {
@@ -72,6 +73,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
+        int x = (this.width - this.imageWidth) / 2;
         int contentLeft = (this.width - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
@@ -88,6 +90,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             SLOT_SIZE,
             SLOT_SIZE
         );
+        this.blockPreviewBounds = new Rect2i(x + 215, contentTop + 30, 64, 64);
 
         // === SR 切换按钮 ===
         if (this.menu.isRedstoneLink()) {
@@ -180,13 +183,19 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
 
         // === 3D 方块预览 ===
+        ItemStack blockStack = ItemStack.EMPTY;
+        if (this.minecraft.level != null) {
+            var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
+            var blockItem = blockState.getBlock().asItem();
+            if (blockItem != null) blockStack = new ItemStack(blockItem);
+        }
         PoseStack ms = graphics.pose();
         ms.pushPose();
         ms.translate(0, 0, 10);
-        GuiGameElement.of(AllBlocks.REDSTONE_LINK.asStack())
+        GuiGameElement.of(blockStack)
             .scale(4)
             .at(0, 0, -200)
-            .render(graphics, x + 195, contentTop + 40);
+            .render(graphics, x + 215, contentTop + 30);
         ms.popPose();
     }
 
