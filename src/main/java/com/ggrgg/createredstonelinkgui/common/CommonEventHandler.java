@@ -52,7 +52,7 @@ public class CommonEventHandler {
             if (vlb != null) {
                 // Check ownership before allowing menu
                 if (!VoidLinkHelper.canInteract(vlb, player)) return;
-                hitFrequencySlot = true;
+                hitFrequencySlot = VoidLinkHelper.isHitOnAnySlot(vlb, hitLocation);
                 isVoidLink = true;
             }
         }

@@ -44,11 +44,12 @@ public class VoidLinkHelper {
         return null;
     }
 
-    public static boolean isHitOnFrequencySlot(Object behaviour, Vec3 hitLocation) {
+    public static boolean isHitOnAnySlot(Object behaviour, Vec3 hitLocation) {
         if (behaviour == null || testHitMethod == null) return false;
         try {
             return (boolean) testHitMethod.invoke(behaviour, 0, hitLocation)
-                || (boolean) testHitMethod.invoke(behaviour, 1, hitLocation);
+                || (boolean) testHitMethod.invoke(behaviour, 1, hitLocation)
+                || (boolean) testHitMethod.invoke(behaviour, 2, hitLocation);
         } catch (Throwable ignored) {}
         return false;
     }

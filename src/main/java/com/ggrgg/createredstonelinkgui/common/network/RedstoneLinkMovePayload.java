@@ -63,9 +63,13 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
             if (sourceBE == null) return;
 
-            // Check that source has a LinkBehaviour (universal discriminant)
+            // Check that source has a LinkBehaviour or VoidLinkBehaviour
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
-            if (sourceLink == null) return;
+            if (sourceLink == null) {
+                // Fallback for Create Utilities' VoidLinkBehaviour
+                Object vlb = com.ggrgg.createredstonelinkgui.common.VoidLinkHelper.getBehaviour(level, sourcePos);
+                if (vlb == null) return;
+            }
 
             // Check if this block is connected to any factory gauges
             FactoryPanelSupportBehaviour gaugeSupport = BlockEntityBehaviour.get(sourceBE, FactoryPanelSupportBehaviour.TYPE);
