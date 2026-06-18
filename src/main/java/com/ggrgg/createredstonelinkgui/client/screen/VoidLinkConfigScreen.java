@@ -16,7 +16,10 @@ import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> {
@@ -158,15 +161,20 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
 
         // Update claim button text each frame
+        String claimStatus = "Unclaimed";
         if (claimButton != null) {
             Object b = this.menu.getBehaviour();
-            String status = "Unclaimed";
             if (b != null) {
                 var owner = VoidLinkHelper.getOwner(b);
-                if (owner != null && owner.getName() != null)
-                    status = owner.getName();
+                if (owner != null && owner.getName() != null) {
+                    claimStatus = owner.getName();
+                    // Render player head next to claim button
+                    ItemStack head = new ItemStack(Items.PLAYER_HEAD);
+                    head.set(DataComponents.PROFILE, new ResolvableProfile(owner));
+                    graphics.renderItem(head, contentLeft + 50, contentTop + 7);
+                }
             }
-            claimButton.setMessage(Component.literal(status));
+            claimButton.setMessage(Component.literal(claimStatus));
         }
 
         // Block preview
