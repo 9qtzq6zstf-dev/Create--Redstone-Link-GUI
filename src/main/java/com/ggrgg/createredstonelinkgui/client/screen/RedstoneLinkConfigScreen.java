@@ -73,24 +73,24 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
-        int x = (this.width - this.imageWidth) / 2;
-        int contentLeft = (this.width - OVERLAY_WIDTH) / 2 + 3;
+        int leftPos = (this.width - this.imageWidth) / 2;
+        int contentLeft = leftPos + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
         // 槽位边界
         this.slot1Bounds = new Rect2i(
-            contentLeft + (SLOT1_UV_X - UV_OFFSET_X),
+            leftPos + 101,
             contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
         this.slot2Bounds = new Rect2i(
-            contentLeft + (SLOT2_UV_X - UV_OFFSET_X),
+            leftPos + 137,
             contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
-        this.blockPreviewBounds = new Rect2i(x + 215, contentTop + 30, 64, 64);
+        this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
         // === SR 切换按钮 ===
         if (this.menu.isRedstoneLink()) {
