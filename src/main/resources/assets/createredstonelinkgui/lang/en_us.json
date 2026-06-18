@@ -6,6 +6,7 @@
   "createredstonelinkgui.configuration.moveRange.tooltip": "Maximum distance in blocks a redstone link can be moved",
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
+  "container.createredstonelinkgui.void_link_menu": "Void Link Frequencies",
 
   "gui.createredstonelinkgui.send": "Send",
   "gui.createredstonelinkgui.receive": "Receive",

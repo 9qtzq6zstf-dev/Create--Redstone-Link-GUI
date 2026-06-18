@@ -3,7 +3,7 @@
 # 1.21.1-1.7.0
 
 - 3D render of link block
-- Exception for 3D render of linked Transmitter attached blocks from create: connected(There's no way to render those blocks)
+- Exception for 3D render of linked Transmitter attached blocks from create: connected. There's no way to render those blocks
 
 # 1.21.1-1.6.0
 

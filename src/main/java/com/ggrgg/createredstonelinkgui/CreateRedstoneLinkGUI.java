@@ -18,7 +18,9 @@ import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPaylo
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(CreateRedstoneLinkGUI.MODID)
@@ -41,6 +43,7 @@ public class CreateRedstoneLinkGUI {
         
         // Setup deferred registry items
         RedstoneLinkMenu.MENUS.register(modEventBus);
+        VoidLinkMenu.MENUS.register(modEventBus);
         
         // Client environment isolation check to block headless server errors
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -72,5 +75,6 @@ public class CreateRedstoneLinkGUI {
 
     private void registerScreens(RegisterMenuScreensEvent event) {
         event.register(RedstoneLinkMenu.TYPE.get(), RedstoneLinkConfigScreen::new);
+        event.register(VoidLinkMenu.TYPE.get(), VoidLinkConfigScreen::new);
     }
 }

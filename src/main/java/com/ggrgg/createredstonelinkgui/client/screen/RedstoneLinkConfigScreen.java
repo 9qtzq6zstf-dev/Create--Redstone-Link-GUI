@@ -5,7 +5,6 @@ import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWi
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
 import net.createmod.catnip.gui.element.GuiGameElement;

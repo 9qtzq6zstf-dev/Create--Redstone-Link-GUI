@@ -6,6 +6,7 @@
   "createredstonelinkgui.configuration.moveRange.tooltip": "终端可移动的最大距离",
 
   "container.createredstonelinkgui.redstone_link_menu": "无线红石终端频率",
+  "container.createredstonelinkgui.void_link_menu": "虚空链接频率",
 
   "gui.createredstonelinkgui.send": "发送",
   "gui.createredstonelinkgui.receive": "接收",
