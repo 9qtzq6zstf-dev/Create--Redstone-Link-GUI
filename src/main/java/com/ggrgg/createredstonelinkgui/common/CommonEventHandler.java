@@ -61,7 +61,7 @@ public class CommonEventHandler {
 
             serverPlayer.openMenu(new SimpleMenuProvider(
                 (id, inv, p) -> new RedstoneLinkMenu(id, inv, pos),
-                Component.literal("Redstone Link Frequency")
+                Component.translatable("container.createredstonelinkgui.redstone_link_menu")
             ), buf -> buf.writeBlockPos(pos));
         }
 

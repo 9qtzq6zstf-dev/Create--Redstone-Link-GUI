@@ -7,11 +7,10 @@
 
   "container.createredstonelinkgui.redstone_link_menu": "Redstone Link Frequencies",
 
-  "gui.createredstonelinkgui.frequencies_settings": "Frequency Settings",
-  "gui.createredstonelinkgui.save_and_close": "Save and Close",
-
   "gui.createredstonelinkgui.send": "Send",
   "gui.createredstonelinkgui.receive": "Receive",
+  "gui.createredstonelinkgui.frequencies_settings": "Frequency Settings",
+  "gui.createredstonelinkgui.close": "Close",
   "gui.createredstonelinkgui.relocate": "Move this link",
   "gui.createredstonelinkgui.click_to_relocate": "Click to relocate the link",
   "gui.createredstonelinkgui.link_relocated": "Link relocated",

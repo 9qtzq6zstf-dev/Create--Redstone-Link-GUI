@@ -126,7 +126,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
             ICON_SIZE, ICON_SIZE,
             OVERLAY_TEXTURE,
             BACK_UV_X, BACK_UV_Y,
-            Component.translatable("gui.createredstonelinkgui.save_and_close"),
+            Component.translatable("gui.createredstonelinkgui.close"),
             (btn) -> {
                 this.minecraft.setScreen(null);
             }

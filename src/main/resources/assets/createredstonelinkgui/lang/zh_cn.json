@@ -7,11 +7,10 @@
 
   "container.createredstonelinkgui.redstone_link_menu": "无线红石终端频率",
 
-  "gui.createredstonelinkgui.frequencies_settings": "频率设置",
-  "gui.createredstonelinkgui.save_and_close": "保存并关闭",
-
   "gui.createredstonelinkgui.send": "发送",
   "gui.createredstonelinkgui.receive": "接收",
+  "gui.createredstonelinkgui.frequencies_settings": "频率设置",
+  "gui.createredstonelinkgui.close": "关闭",
   "gui.createredstonelinkgui.relocate": "移动此终端",
   "gui.createredstonelinkgui.click_to_relocate": "点击放置终端",
   "gui.createredstonelinkgui.link_relocated": "终端移动成功",
