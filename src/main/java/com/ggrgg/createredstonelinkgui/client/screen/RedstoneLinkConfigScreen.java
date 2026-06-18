@@ -69,7 +69,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     protected void init() {
         super.init();
 
-        int contentLeft = (this.width - OVERLAY_WIDTH) / 2;
+        int contentLeft = (this.width - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
         // 槽位边界
@@ -157,7 +157,7 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2;
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = y + CONTENT_TOP_OFFSET;
 
         // 绘制覆盖层

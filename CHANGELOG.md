@@ -2,7 +2,8 @@
 
 # 1.21.1-1.6.0
 
-- Add actual texture to GUI, consistent with create mod GUIs(credit to 咖喱之恶魔)
+- Add actual texture to GUI, consistent with create mod GUIs(made by 咖喱之恶魔)
+- Improve indicator for moving links
 
 # 1.21.1-1.5.0
 

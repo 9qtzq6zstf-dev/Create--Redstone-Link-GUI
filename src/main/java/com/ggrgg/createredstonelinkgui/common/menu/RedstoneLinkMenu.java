@@ -87,8 +87,8 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         }
 
         // Add custom Ghost Recipe Slots
-        this.addSlot(new GhostRecipeSlot(0, 98, 34, () -> getFrequencyItem(0), this::setFrequencyItem));
-        this.addSlot(new GhostRecipeSlot(1, 134, 34, () -> getFrequencyItem(1), this::setFrequencyItem));
+        this.addSlot(new GhostRecipeSlot(0, 101, 34, () -> getFrequencyItem(0), this::setFrequencyItem));
+        this.addSlot(new GhostRecipeSlot(1, 137, 34, () -> getFrequencyItem(1), this::setFrequencyItem));
 
         // Player Main Inventory Layout (Rows 1-3)
         for (int row = 0; row < 3; ++row) {
