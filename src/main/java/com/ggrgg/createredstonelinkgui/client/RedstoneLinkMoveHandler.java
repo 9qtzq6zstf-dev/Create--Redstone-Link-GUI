@@ -27,6 +27,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public class RedstoneLinkMoveHandler {
 
+    private static final double HIGHLIGHT_INSET = 0.0625; // 1/16 block inset from block edge
+    private static final double HIGHLIGHT_DEPTH = 0.0625; // 1/16 block slab thickness
+
     private static BlockPos sourcePos;
     private static BlockState sourceState;
     private static boolean active;
@@ -59,9 +62,12 @@ public class RedstoneLinkMoveHandler {
             return;
         }
 
-        // Show outline on source block
+        // Show face highlight on source block
+        Direction sourceFace = sourceState.hasProperty(BlockStateProperties.FACING)
+                ? sourceState.getValue(BlockStateProperties.FACING).getOpposite()
+                : Direction.UP;
         Outliner.getInstance()
-                .showAABB(sourcePos, new AABB(sourcePos))
+                .showAABB(sourcePos, getFaceHighlight(sourcePos, sourceFace))
                 .colored(AnimationTickHolder.getTicks() % 16 > 8 ? 0x38b764 : 0xa7f070)
                 .lineWidth(1 / 16f);
 
@@ -78,6 +84,7 @@ public class RedstoneLinkMoveHandler {
             return;
 
         Direction clickedFace = bhr.getDirection();
+        Direction attachFace = clickedFace.getOpposite();
 
         Vec3 offsetPos = bhr.getLocation()
                 .add(Vec3.atLowerCornerOf(clickedFace.getNormal())
@@ -89,7 +96,7 @@ public class RedstoneLinkMoveHandler {
         // Check: obstructed
         if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) {
             invalidReason = "move_fail_obstructed";
-            showRedOutline(pos);
+            showRedOutline(pos, attachFace);
             return;
         }
 
@@ -99,14 +106,14 @@ public class RedstoneLinkMoveHandler {
         BlockState newState = sourceState.getBlock().getStateForPlacement(placeContext);
         if (newState == null) {
             invalidReason = "move_fail_no_surface";
-            showRedOutline(pos);
+            showRedOutline(pos, attachFace);
             return;
         }
 
         // Check: survivability
         if (!newState.canSurvive(mc.level, pos)) {
             invalidReason = "move_fail_cant_survive";
-            showRedOutline(pos);
+            showRedOutline(pos, attachFace);
             return;
         }
 
@@ -124,7 +131,7 @@ public class RedstoneLinkMoveHandler {
                 Direction newFace = newState.getValue(BlockStateProperties.FACING);
                 if (oldFace != newFace) {
                     invalidReason = "move_fail_surface";
-                    showRedOutline(pos);
+                    showRedOutline(pos, attachFace);
                     return;
                 }
 
@@ -132,7 +139,7 @@ public class RedstoneLinkMoveHandler {
                 for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels()) {
                     if (!gaugePos.pos().closerThan(pos, 24)) {
                         invalidReason = "move_fail_range";
-                        showRedOutline(pos);
+                        showRedOutline(pos, attachFace);
                         return;
                     }
                 }
@@ -142,14 +149,14 @@ public class RedstoneLinkMoveHandler {
         // Check: player proximity to source (uses same range as server)
         if (mc.player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > effectiveRange * effectiveRange) {
             invalidReason = "move_fail_range";
-            showRedOutline(pos);
+            showRedOutline(pos, attachFace);
             return;
         }
 
         // Check: source-to-target distance (sublevel-aware)
         if (SableHelper.distanceSquared(mc.level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(pos)) > effectiveRange * effectiveRange) {
             invalidReason = "move_fail_range";
-            showRedOutline(pos);
+            showRedOutline(pos, attachFace);
             return;
         }
 
@@ -158,17 +165,37 @@ public class RedstoneLinkMoveHandler {
         validFace = clickedFace;
 
         Outliner.getInstance()
-                .showAABB("target", new AABB(pos))
+                .showAABB("target", getFaceHighlight(pos, attachFace))
                 .colored(0xeeeeee)
                 .disableLineNormals()
                 .lineWidth(1 / 16f);
     }
 
-    private static void showRedOutline(BlockPos pos) {
+    private static void showRedOutline(BlockPos pos, Direction face) {
         Outliner.getInstance()
-                .showAABB("target", new AABB(pos))
+                .showAABB("target", getFaceHighlight(pos, face))
                 .colored(0xff4444)
                 .lineWidth(1 / 16f);
+    }
+
+    private static AABB getFaceHighlight(BlockPos pos, Direction face) {
+        Vec3 c = Vec3.atCenterOf(pos);
+        double minX = c.x - 0.5 + HIGHLIGHT_INSET;
+        double minY = c.y - 0.5 + HIGHLIGHT_INSET;
+        double minZ = c.z - 0.5 + HIGHLIGHT_INSET;
+        double maxX = c.x + 0.5 - HIGHLIGHT_INSET;
+        double maxY = c.y + 0.5 - HIGHLIGHT_INSET;
+        double maxZ = c.z + 0.5 - HIGHLIGHT_INSET;
+
+        switch (face) {
+            case DOWN:  maxY = c.y - 0.5 + HIGHLIGHT_DEPTH; break;
+            case UP:    minY = c.y + 0.5 - HIGHLIGHT_DEPTH; break;
+            case NORTH: maxZ = c.z - 0.5 + HIGHLIGHT_DEPTH; break;
+            case SOUTH: minZ = c.z + 0.5 - HIGHLIGHT_DEPTH; break;
+            case WEST:  maxX = c.x - 0.5 + HIGHLIGHT_DEPTH; break;
+            case EAST:  minX = c.x + 0.5 - HIGHLIGHT_DEPTH; break;
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     public static boolean onRightClick() {
