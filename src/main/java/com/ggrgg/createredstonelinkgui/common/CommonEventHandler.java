@@ -1,8 +1,6 @@
 package com.ggrgg.createredstonelinkgui.common;
 
-import com.ggrgg.createredstonelinkgui.Config;
-import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.api.distmarker.Dist;
+import com.ggrgg.createredstonelinkgui.ClientConfig;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
@@ -41,31 +39,24 @@ public class CommonEventHandler {
         if (hitVec == null) return;
         Vec3 hitLocation = hitVec.getLocation();
 
-        // Read click mode — client-only config, but checked on both sides for consistency
-        boolean requiresShift;
-        boolean hitAnyBlock;
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            var clickMode = com.ggrgg.createredstonelinkgui.ClientConfig.CLICK_MODE.get();
-            requiresShift = (clickMode != com.ggrgg.createredstonelinkgui.ClientConfig.ClickMode.SLOT);
-            hitAnyBlock = (clickMode == com.ggrgg.createredstonelinkgui.ClientConfig.ClickMode.SHIFT_BLOCK);
-        } else {
-            requiresShift = true;  // default SHIFT_SLOT on server
-            hitAnyBlock = false;
-        }
+        // Read click mode — synced from client to server by NeoForge
+        ClientConfig.ClickMode clickMode = ClientConfig.CLICK_MODE.get();
+        boolean requiresShift = (clickMode != ClientConfig.ClickMode.SLOT);
+        boolean hitAnyBlock = (clickMode == ClientConfig.ClickMode.SHIFT_BLOCK);
 
         if (requiresShift && !player.isShiftKeyDown()) return;
         if (!requiresShift && player.isShiftKeyDown()) return;
 
-        boolean hitFrequencySlot = false;
+        boolean hitValid = false;
         boolean isVoidLink = false;
 
         // Check for Create's LinkBehaviour
         LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
         if (behaviour != null) {
             if (hitAnyBlock) {
-                hitFrequencySlot = true;
+                hitValid = true;
             } else {
-                hitFrequencySlot = behaviour.testHit(true, hitLocation) || behaviour.testHit(false, hitLocation);
+                hitValid = behaviour.testHit(true, hitLocation) || behaviour.testHit(false, hitLocation);
             }
         } else {
             // Check for Create Utilities' VoidLinkBehaviour
@@ -73,17 +64,18 @@ public class CommonEventHandler {
             if (vlb != null) {
                 if (!VoidLinkHelper.canInteract(vlb, player)) return;
                 if (hitAnyBlock) {
-                    hitFrequencySlot = true;
+                    hitValid = true;
                 } else {
-                    hitFrequencySlot = VoidLinkHelper.isHitOnAnySlot(vlb, hitLocation);
+                    hitValid = VoidLinkHelper.isHitOnAnySlot(vlb, hitLocation);
                 }
                 isVoidLink = true;
             }
         }
 
-        if (!hitFrequencySlot) return;
+        if (!hitValid) return;
         if (!event.getItemStack().isEmpty()) return;
 
+        // Server only: open menu
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             be.setChanged();
             level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
