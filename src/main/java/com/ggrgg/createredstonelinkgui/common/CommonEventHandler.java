@@ -1,6 +1,8 @@
 package com.ggrgg.createredstonelinkgui.common;
 
 import com.ggrgg.createredstonelinkgui.Config;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.api.distmarker.Dist;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
@@ -39,10 +41,17 @@ public class CommonEventHandler {
         if (hitVec == null) return;
         Vec3 hitLocation = hitVec.getLocation();
 
-        // Read click mode (client-side config, checked on both sides for consistency)
-        Config.ClickMode clickMode = Config.CLICK_MODE.get();
-        boolean requiresShift = (clickMode != Config.ClickMode.SLOT);
-        boolean hitAnyBlock = (clickMode == Config.ClickMode.SHIFT_BLOCK);
+        // Read click mode — client-only config, but checked on both sides for consistency
+        boolean requiresShift;
+        boolean hitAnyBlock;
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            var clickMode = com.ggrgg.createredstonelinkgui.ClientConfig.CLICK_MODE.get();
+            requiresShift = (clickMode != com.ggrgg.createredstonelinkgui.ClientConfig.ClickMode.SLOT);
+            hitAnyBlock = (clickMode == com.ggrgg.createredstonelinkgui.ClientConfig.ClickMode.SHIFT_BLOCK);
+        } else {
+            requiresShift = true;  // default SHIFT_SLOT on server
+            hitAnyBlock = false;
+        }
 
         if (requiresShift && !player.isShiftKeyDown()) return;
         if (!requiresShift && player.isShiftKeyDown()) return;

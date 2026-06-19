@@ -9,7 +9,7 @@
   "container.createredstonelinkgui.void_link_menu": "Void Link Frequencies",
 
   "createredstonelinkgui.configuration.clickMode": "Menu Trigger Mode",
-  "createredstonelinkgui.configuration.clickMode.tooltip": "How to open the redstone link frequency menu",
+  "createredstonelinkgui.configuration.clickMode.tooltip": "How to open the redstone link frequency menu (Client-side)",
   "createredstonelinkgui.configuration.clickMode.SLOT": "Slot - Right-click frequency slot",
   "createredstonelinkgui.configuration.clickMode.SHIFT_SLOT": "Shift+Slot - Shift + right-click frequency slot",
   "createredstonelinkgui.configuration.clickMode.SHIFT_BLOCK": "Shift+Block - Shift + right-click anywhere",

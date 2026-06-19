@@ -49,6 +49,7 @@ public class CreateRedstoneLinkGUI {
         // Client environment isolation check to block headless server errors
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(this::registerScreens);
+            modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
         }
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us

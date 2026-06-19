@@ -9,7 +9,7 @@
   "container.createredstonelinkgui.void_link_menu": "虚空链接频率",
 
   "createredstonelinkgui.configuration.clickMode": "菜单触发模式",
-  "createredstonelinkgui.configuration.clickMode.tooltip": "如何打开终端频率菜单",
+  "createredstonelinkgui.configuration.clickMode.tooltip": "如何打开终端频率菜单（纯客户端）",
   "createredstonelinkgui.configuration.clickMode.SLOT": "右键槽位 - 右键点击频率槽",
   "createredstonelinkgui.configuration.clickMode.SHIFT_SLOT": "Shift+右键槽位 - Shift+右键点击频率槽",
   "createredstonelinkgui.configuration.clickMode.SHIFT_BLOCK": "Shift+右键方块 - Shift+右键点击任意处",
