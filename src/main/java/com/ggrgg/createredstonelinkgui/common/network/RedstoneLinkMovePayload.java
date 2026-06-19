@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -63,19 +64,15 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             BlockEntity sourceBE = level.getBlockEntity(sourcePos);
             if (sourceBE == null) return;
 
-            // Check that source has a LinkBehaviour or VoidLinkBehaviour
             LinkBehaviour sourceLink = BlockEntityBehaviour.get(sourceBE, LinkBehaviour.TYPE);
             if (sourceLink == null) {
-                // Fallback for Create Utilities' VoidLinkBehaviour
                 Object vlb = com.ggrgg.createredstonelinkgui.common.VoidLinkHelper.getBehaviour(level, sourcePos);
                 if (vlb == null) return;
             }
 
-            // Check if this block is connected to any factory gauges
             FactoryPanelSupportBehaviour gaugeSupport = BlockEntityBehaviour.get(sourceBE, FactoryPanelSupportBehaviour.TYPE);
             boolean hasGaugeConnection = gaugeSupport != null && !gaugeSupport.getLinkedPanels().isEmpty();
 
-            // Compute range limit — factory gauges enforce a hard 24-block limit
             int maxRange = Config.MOVE_RANGE.get();
             if (hasGaugeConnection) {
                 maxRange = Math.min(maxRange, 24);
@@ -83,7 +80,6 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
                     if (!gaugePos.pos().closerThan(targetPos, 24)) return;
             }
 
-            // Verification: player must be within the configured move range of source
             if (player.distanceToSqr(sourcePos.getX(), sourcePos.getY(), sourcePos.getZ()) > maxRange * maxRange) return;
             if (SableHelper.distanceSquared(level, Vec3.atCenterOf(sourcePos), Vec3.atCenterOf(targetPos)) > maxRange * maxRange) return;
 
@@ -91,45 +87,52 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
             BlockState targetState = level.getBlockState(targetPos);
             boolean inPlace = sourcePos.equals(targetPos);
 
-            // If moving to a new position, it must be air or replaceable
-            // If moving in place, allow it (reorienting without moving)
             if (!inPlace && !targetState.isAir() && !targetState.canBeReplaced()) return;
 
-            // Dynamically determine the new block state using the block's own placement logic.
             Block block = sourceState.getBlock();
             BlockPlaceContext placeContext = new BlockPlaceContext(level, player, InteractionHand.MAIN_HAND,
                     ItemStack.EMPTY, new BlockHitResult(Vec3.atCenterOf(targetPos), clickedFace, targetPos, false));
             BlockState newState = block.getStateForPlacement(placeContext);
             if (newState == null) return;
 
-            // Preserve blockstate properties that aren't orientation-related
             newState = copyNonOrientationProperties(newState, sourceState);
 
-            // When connected to factory gauges, enforce same-surface constraint
+            // For void link blocks, reverse facing so frequency slots face the player
+            // Iterate block properties to find any property named "facing" — this handles
+            // both FACING (6-direction) and HORIZONTAL_FACING (4-direction) regardless of
+            // which DirectionProperty instance the block actually uses.
+            String blockId = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).toString();
+            if (blockId.equals("createutilities:void_motor") ||
+                blockId.equals("createutilities:void_chest") ||
+                blockId.equals("createutilities:void_battery")) {
+                for (Property<?> prop : newState.getProperties()) {
+                    if (prop.getName().equals("facing") && prop instanceof DirectionProperty dp) {
+                        Direction opposite = newState.getValue(dp).getOpposite();
+                        newState = newState.setValue(dp, opposite);
+                        break;
+                    }
+                }
+            }
+
             if (hasGaugeConnection) {
                 Direction oldFace = sourceState.getValue(BlockStateProperties.FACING);
                 Direction newFace = newState.getValue(BlockStateProperties.FACING);
                 if (oldFace != newFace) return;
             }
 
-            // Validate survivability with the new orientation
             if (!newState.canSurvive(level, targetPos)) return;
 
-            // Capture full BE data
             HolderLookup.Provider registries = level.registryAccess();
             CompoundTag beTag = sourceBE.saveWithoutMetadata(registries);
 
-            // Place block at target
             level.setBlock(targetPos, newState, Block.UPDATE_ALL);
 
-            // Restore NBT on new BE
             BlockEntity newBE = level.getBlockEntity(targetPos);
             if (newBE != null) {
                 newBE.loadWithComponents(beTag, registries);
                 newBE.setChanged();
             }
 
-            // Reconnect factory gauges to the new position
             if (gaugeSupport != null && !inPlace) {
                 for (FactoryPanelPosition gaugePos : gaugeSupport.getLinkedPanels()) {
                     FactoryPanelBehaviour panel = FactoryPanelBehaviour.at(level, gaugePos);
@@ -144,7 +147,6 @@ public record RedstoneLinkMovePayload(BlockPos sourcePos, BlockPos targetPos, Di
 
             level.sendBlockUpdated(targetPos, newState, newState, Block.UPDATE_ALL);
 
-            // Destroy source block silently (no drops) if not in-place
             if (!inPlace) {
                 level.setBlock(sourcePos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
                 level.sendBlockUpdated(sourcePos, sourceState, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);

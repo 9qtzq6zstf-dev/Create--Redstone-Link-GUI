@@ -3,6 +3,8 @@
 # 1.21.1-1.8.0
 
 - Improvement to UI(by 咖喱之恶魔)
+- New client side config option for open GUI interaction(shift click slot, click slot, shift click block)
+- Reverse placement direction for void blocks from Create Utilities for ease of use
 
 # 1.21.1-1.7.0
 

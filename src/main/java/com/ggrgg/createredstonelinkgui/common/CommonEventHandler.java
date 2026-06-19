@@ -1,5 +1,6 @@
 package com.ggrgg.createredstonelinkgui.common;
 
+import com.ggrgg.createredstonelinkgui.Config;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
@@ -30,7 +31,6 @@ public class CommonEventHandler {
         Player player = event.getEntity();
 
         if (event.getHand() != InteractionHand.MAIN_HAND) return;
-        if (player.isShiftKeyDown()) return;
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null) return;
@@ -39,20 +39,35 @@ public class CommonEventHandler {
         if (hitVec == null) return;
         Vec3 hitLocation = hitVec.getLocation();
 
+        // Read click mode (client-side config, checked on both sides for consistency)
+        Config.ClickMode clickMode = Config.CLICK_MODE.get();
+        boolean requiresShift = (clickMode != Config.ClickMode.SLOT);
+        boolean hitAnyBlock = (clickMode == Config.ClickMode.SHIFT_BLOCK);
+
+        if (requiresShift && !player.isShiftKeyDown()) return;
+        if (!requiresShift && player.isShiftKeyDown()) return;
+
         boolean hitFrequencySlot = false;
         boolean isVoidLink = false;
 
         // Check for Create's LinkBehaviour
         LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
         if (behaviour != null) {
-            hitFrequencySlot = behaviour.testHit(true, hitLocation) || behaviour.testHit(false, hitLocation);
+            if (hitAnyBlock) {
+                hitFrequencySlot = true;
+            } else {
+                hitFrequencySlot = behaviour.testHit(true, hitLocation) || behaviour.testHit(false, hitLocation);
+            }
         } else {
-            // Check for Create Utilities' VoidLinkBehaviour — accept all slots (0, 1, 2)
+            // Check for Create Utilities' VoidLinkBehaviour
             Object vlb = VoidLinkHelper.getBehaviour(level, pos);
             if (vlb != null) {
-                // Check ownership before allowing menu
                 if (!VoidLinkHelper.canInteract(vlb, player)) return;
-                hitFrequencySlot = VoidLinkHelper.isHitOnAnySlot(vlb, hitLocation);
+                if (hitAnyBlock) {
+                    hitFrequencySlot = true;
+                } else {
+                    hitFrequencySlot = VoidLinkHelper.isHitOnAnySlot(vlb, hitLocation);
+                }
                 isVoidLink = true;
             }
         }
