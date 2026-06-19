@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.8.0
+
+- Improvement to UI(by 咖喱之恶魔)
+
 # 1.21.1-1.7.0
 
 - 3D render of link block
