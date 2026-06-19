@@ -23,5 +23,14 @@ public class AddonEmiPlugin implements EmiPlugin {
                     screen.blockPreviewBounds.getHeight()
                 ));
         });
+        registry.addExclusionArea(com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen.class, (screen, consumer) -> {
+            if (screen.blockPreviewBounds != null)
+                consumer.accept(new Bounds(
+                    screen.blockPreviewBounds.getX(),
+                    screen.blockPreviewBounds.getY(),
+                    screen.blockPreviewBounds.getWidth(),
+                    screen.blockPreviewBounds.getHeight()
+                ));
+        });
     }
 }

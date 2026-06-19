@@ -38,6 +38,14 @@ public class AddonJeiPlugin implements IModPlugin {
                     : List.of();
             }
         });
+        registration.addGenericGuiContainerHandler(VoidLinkConfigScreen.class, new IGuiContainerHandler<VoidLinkConfigScreen>() {
+            @Override
+            public List<Rect2i> getGuiExtraAreas(VoidLinkConfigScreen screen) {
+                return screen.blockPreviewBounds != null
+                    ? List.of(screen.blockPreviewBounds)
+                    : List.of();
+            }
+        });
     }
 
     private static class VoidLinkGhostHandler implements IGhostIngredientHandler<VoidLinkConfigScreen> {
