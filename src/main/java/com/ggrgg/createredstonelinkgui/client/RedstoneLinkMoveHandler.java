@@ -86,10 +86,8 @@ public class RedstoneLinkMoveHandler {
         Direction clickedFace = bhr.getDirection();
         Direction attachFace = clickedFace.getOpposite();
 
-        Vec3 offsetPos = bhr.getLocation()
-                .add(Vec3.atLowerCornerOf(clickedFace.getNormal())
-                        .scale(1 / 32f));
-        BlockPos pos = BlockPos.containing(offsetPos);
+        // Use the adjacent block position — matches vanilla BlockItem placement behavior
+        BlockPos pos = bhr.getBlockPos().relative(clickedFace);
         BlockState targetState = mc.level.getBlockState(pos);
         boolean inPlace = pos.equals(sourcePos);
 
