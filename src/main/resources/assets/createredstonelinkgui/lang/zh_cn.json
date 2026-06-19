@@ -20,5 +20,9 @@
   "gui.createredstonelinkgui.move_fail_no_surface": "没有可附着的表面",
   "gui.createredstonelinkgui.move_fail_cant_survive": "无法附着在该表面上",
   "gui.createredstonelinkgui.move_fail_surface": "连接了工厂仪表时无法改变面向",
-  "gui.createredstonelinkgui.move_fail_range": "目标超出范围"
+  "gui.createredstonelinkgui.move_fail_range": "目标超出范围",
+  "gui.createredstonelinkgui.frequency_first": "频率 #1",
+  "gui.createredstonelinkgui.frequency_second": "频率 #2",
+  "gui.createredstonelinkgui.own": "左键认领",
+  "gui.createredstonelinkgui.forfeit": "左键取消认领"
 }

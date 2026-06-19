@@ -20,5 +20,9 @@
   "gui.createredstonelinkgui.move_fail_no_surface": "No surface to attach to",
   "gui.createredstonelinkgui.move_fail_cant_survive": "Cannot attach to that surface",
   "gui.createredstonelinkgui.move_fail_surface": "Cannot change surface with factory gauge connected",
-  "gui.createredstonelinkgui.move_fail_range": "Target out of range"
+  "gui.createredstonelinkgui.move_fail_range": "Target out of range",
+  "gui.createredstonelinkgui.frequency_first": "Frequency #1",
+  "gui.createredstonelinkgui.frequency_second": "Frequency #2",
+  "gui.createredstonelinkgui.own": "Left-click to own",
+  "gui.createredstonelinkgui.forfeit": "Left-click to forfeit ownership"
 }
