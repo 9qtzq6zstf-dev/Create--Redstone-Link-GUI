@@ -14,6 +14,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
+import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
@@ -77,6 +78,11 @@ public class CreateRedstoneLinkGUI {
                 VoidLinkClaimPayload.TYPE,
                 VoidLinkClaimPayload.CODEC,
                 VoidLinkClaimPayload::handleServer
+        );
+        registrar.playToServer(
+                OpenLinkMenuPayload.TYPE,
+                OpenLinkMenuPayload.CODEC,
+                OpenLinkMenuPayload::handleServer
         );
     }
 
