@@ -4,10 +4,8 @@ import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
-import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -204,21 +202,10 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         graphics.drawString(font, titleText, titleX, titleY, 0xFF3C3B47, false);
 
         // === 3D 方块预览 ===
-        ItemStack blockStack = ItemStack.EMPTY;
         if (this.minecraft.level != null) {
             var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
-            var blockItem = blockState.getBlock().asItem();
-            if (blockItem != null) blockStack = new ItemStack(blockItem);
-        }
-        if (!blockStack.isEmpty()) {
-            PoseStack ms = graphics.pose();
-            ms.pushPose();
-            ms.translate(0, 0, 10);
-            GuiGameElement.of(blockStack)
-                .scale(4)
-                .at(0, 0, -200)
-                .render(graphics, x + 215, contentTop + 30);
-            ms.popPose();
+            var blockEntity = this.minecraft.level.getBlockEntity(this.menu.getPos());
+            BlockPreviewRenderer.render(graphics, blockState, blockEntity, x + 215, contentTop + 30);
         }
     }
 
