@@ -40,7 +40,7 @@ public class BlockPreviewRenderer {
             PartialModel.of(ResourceLocation.fromNamespaceAndPath("simulated", "block/throttle_lever/button"));
     private static final PartialModel THROTTLE_LEVER_DIODE =
             PartialModel.of(ResourceLocation.fromNamespaceAndPath("simulated", "block/throttle_lever/diode"));
-    private static final int LINKED_PREVIEW_X_OFFSET = 22;
+    private static final int LINKED_PREVIEW_X_OFFSET = 27;
     private static final int LINKED_PREVIEW_Y_OFFSET = 62;
     private static final int LINKED_PREVIEW_Y_ROTATION = 135;
 
