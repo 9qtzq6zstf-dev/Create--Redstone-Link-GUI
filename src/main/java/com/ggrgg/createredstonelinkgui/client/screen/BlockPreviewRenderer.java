@@ -104,20 +104,7 @@ public class BlockPreviewRenderer {
             int x, int y) {
         PoseStack pose = graphics.pose();
         pose.pushPose();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.enableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        Lighting.setupFor3DItems();
-
-        pose.translate(x, y, 0);
-        pose.scale(42, 42, 42);
-        pose.translate(-0.5, -0.35, 0);
-        UIRenderHelper.flipForGuiRender(pose);
-        pose.translate(0.5, 0.5, 0.5);
-        pose.mulPose(Axis.XP.rotationDegrees(25));
-        pose.mulPose(Axis.YP.rotationDegrees(LINKED_PREVIEW_Y_ROTATION));
-        pose.translate(-0.5, -0.5, -0.5);
+        prepareLinkedPreviewMatrix(pose, x, y);
 
         MultiBufferSource.BufferSource buffer = graphics.bufferSource();
         VertexConsumer vb = buffer.getBuffer(RenderType.solid());
