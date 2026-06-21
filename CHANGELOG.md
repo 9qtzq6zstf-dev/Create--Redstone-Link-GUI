@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.8.2
+
+- Rewrote block preview rendering, now work for Linked Transmitter attached blocks (credit to KazeShukufuku)
+
 # 1.21.1-1.8.1
 
 - Fix critical server bug, rewrote packet struture
