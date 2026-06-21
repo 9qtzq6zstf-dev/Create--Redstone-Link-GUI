@@ -62,3 +62,5 @@ local.properties
 ### 3D model source files (just in case) ###
 *.bbmodel
 *.blend
+
+.codex-tmp/
