@@ -2,7 +2,8 @@
 
 # 1.21.1-1.8.3
 
-- Compat for Frequency Create by registering that mod's items in JEI
+- Compat for Frequency Create by registering that mod's items in JEI and copying its menu
+- Backend reconstruction
 
 # 1.21.1-1.8.2
 

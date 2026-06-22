@@ -11,9 +11,6 @@ import java.lang.reflect.Method;
  * Utility for Sable sublevel compatibility.
  * Uses SableCompanion via reflection, following the official sable-companion API:
  * https://github.com/ryanhcode/sable-companion
- * <p>
- * Sable already corrects Entity#distanceToSqr, so player distance checks work
- * without this. Only direct Vec3 distance comparisons need correction.
  */
 public class SableHelper {
 

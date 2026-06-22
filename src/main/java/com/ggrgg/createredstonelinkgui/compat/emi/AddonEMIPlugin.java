@@ -1,9 +1,10 @@
 package com.ggrgg.createredstonelinkgui.compat.emi;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
+import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
 
 import dev.emi.emi.api.EmiEntrypoint;
 import dev.emi.emi.api.EmiPlugin;
@@ -16,13 +17,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 @EmiEntrypoint
-public class AddonEmiPlugin implements EmiPlugin {
+public class AddonEMIPlugin implements EmiPlugin {
 
     /**
      * Exact ordering matching maze.frequency.init.FrequencyModItems.SYMBOL_NAMES,
      * minus symbol_empty which is already visible via creative tab.
      */
-    private static final List<String> SYMBOL_NAMES = Arrays.asList(
+    private static final List<String> SYMBOL_NAMES = List.of(
         "symbol_1", "symbol_2", "symbol_3", "symbol_4", "symbol_5",
         "symbol_6", "symbol_7", "symbol_8", "symbol_9", "symbol_0",
         "symbol_a", "symbol_b", "symbol_c", "symbol_d", "symbol_e",
@@ -45,8 +46,11 @@ public class AddonEmiPlugin implements EmiPlugin {
 
     @Override
     public void register(EmiRegistry registry) {
-        registry.addDragDropHandler(RedstoneLinkConfigScreen.class, new RedstoneLinkEmiDragHandler());
-        registry.addDragDropHandler(com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen.class, new VoidLinkEmiDragHandler());
+        // Single generic drag-drop handler for both redstone and void link screens
+        var handler = new EMIDragDropHandler();
+        registry.addDragDropHandler(RedstoneLinkConfigScreen.class, handler);
+        registry.addDragDropHandler(VoidLinkConfigScreen.class, handler);
+
         registry.addExclusionArea(RedstoneLinkConfigScreen.class, (screen, consumer) -> {
             if (screen.blockPreviewBounds != null)
                 consumer.accept(new Bounds(
@@ -56,7 +60,7 @@ public class AddonEmiPlugin implements EmiPlugin {
                     screen.blockPreviewBounds.getHeight()
                 ));
         });
-        registry.addExclusionArea(com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen.class, (screen, consumer) -> {
+        registry.addExclusionArea(VoidLinkConfigScreen.class, (screen, consumer) -> {
             if (screen.blockPreviewBounds != null)
                 consumer.accept(new Bounds(
                     screen.blockPreviewBounds.getX(),
@@ -66,7 +70,7 @@ public class AddonEmiPlugin implements EmiPlugin {
                 ));
         });
 
-        // Add symbols in exact order matching the frequency mod's built-in menu
+        // Unhide frequency mod symbol items, ordered by the frequency mod's list
         Registry<net.minecraft.world.item.Item> itemRegistry = BuiltInRegistries.ITEM;
         for (String name : SYMBOL_NAMES) {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath("frequency", name);

@@ -22,13 +22,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 @JeiPlugin
-public class AddonJeiPlugin implements IModPlugin {
+public class AddonJEIPlugin implements IModPlugin {
     private static final ResourceLocation PLUGIN_ID = ResourceLocation.fromNamespaceAndPath("createredstonelinkgui", "jei_plugin");
 
     /**
      * Exact ordering matching maze.frequency.init.FrequencyModItems.SYMBOL_NAMES,
      * minus symbol_empty which is already visible via creative tab.
-     * This ensures fine-grained ordering (e.g. 1 before 2, a before b, etc.).
      */
     private static final List<String> SYMBOL_NAMES = Arrays.asList(
         "symbol_1", "symbol_2", "symbol_3", "symbol_4", "symbol_5",
