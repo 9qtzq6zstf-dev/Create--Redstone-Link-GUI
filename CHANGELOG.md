@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.8.3
+
+- Compat for Frequency Create by registering that mod's items in JEI
+
 # 1.21.1-1.8.2
 
 - Rewrote block preview rendering, now work for Linked Transmitter attached blocks (credit to KazeShukufuku)

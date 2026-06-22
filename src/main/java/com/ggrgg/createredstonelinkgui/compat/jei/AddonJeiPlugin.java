@@ -13,7 +13,9 @@ import mezz.jei.api.gui.handlers.IGhostIngredientHandler;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -46,6 +48,23 @@ public class AddonJeiPlugin implements IModPlugin {
                     : List.of();
             }
         });
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
+        List<ItemStack> symbolStacks = new ArrayList<>();
+        for (var entry : BuiltInRegistries.ITEM.entrySet()) {
+            ResourceLocation id = entry.getKey().location();
+            if (!id.getNamespace().equals("frequency")) continue;
+            String path = id.getPath();
+            if (!path.startsWith("symbol_")) continue;
+            if (path.equals("symbol_frame")) continue;
+
+            symbolStacks.add(new ItemStack(entry.getValue()));
+        }
+        if (!symbolStacks.isEmpty()) {
+            jeiRuntime.getIngredientManager().addIngredientsAtRuntime(VanillaTypes.ITEM_STACK, symbolStacks);
+        }
     }
 
     private static class VoidLinkGhostHandler implements IGhostIngredientHandler<VoidLinkConfigScreen> {
