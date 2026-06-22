@@ -6,8 +6,6 @@ import java.util.List;
 
 import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
@@ -90,7 +88,8 @@ public class SymbolPickerScreen extends Screen {
         "symbol_up_arrow", "symbol_down_arrow", "symbol_left_arrow", "symbol_right_arrow",
         "symbol_darrow_up", "symbol_darrow_down", "symbol_darrow_left", "symbol_darrow_right",
         "symbol_skull",
-        "symbol_creeperhead"
+        "symbol_creeperhead",
+        "symbol_empty"
     );
 
     // ==================== State ====================
@@ -366,8 +365,8 @@ public class SymbolPickerScreen extends Screen {
                     PacketDistributor.sendToServer(
                         new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
                             blockPos, row.items.get(i), slotIndex));
-                    // Reopen the config menu so server re-validates everything
-                    reopenConfigMenu();
+                    // Close this screen; removed() will reopen the config menu
+                    this.onClose();
                     return true;
                 }
             }
@@ -377,18 +376,9 @@ public class SymbolPickerScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // Escape or inventory key — reopen config menu without changes
-        reopenConfigMenu();
-        return true;
-    }
-
-    /**
-     * Sends a packet to the server to reopen the link config menu.
-     * The server will validate the block still exists and open a fresh container.
-     */
-    private void reopenConfigMenu() {
+    public void removed() {
+        // When this screen is closed (Escape, inventory key, or programmatic close),
+        // reopen the original frequency config menu on the server.
         PacketDistributor.sendToServer(new OpenLinkMenuPayload(blockPos));
-        this.onClose();
     }
 }

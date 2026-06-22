@@ -1,5 +1,8 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
@@ -200,24 +203,36 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        // ========== 频率槽位工具提示（来自文件一） ==========
-        // 频率槽位工具提示（根据槽位是否有物品调整垂直偏移，文字设为蓝色）
+        // ========== 频率槽位工具提示 ==========
         if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
             Slot slot = this.menu.getSlot(0);
-            int yOffset = slot.hasItem() ? -20 : 0;
-            graphics.renderTooltip(this.minecraft.font,
-                    Component.translatable("gui.createredstonelinkgui.frequency_first")
-                            .withStyle(ChatFormatting.BLUE),
+            int lineCount = 1 + (isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            // Shift tooltip upward to avoid clipping into item tooltip below
+            int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
+            List<Component> tooltipLines = new ArrayList<>();
+            tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_first")
+                    .withStyle(ChatFormatting.BLUE));
+            if (isFrequencySymbol(slot.getItem())) {
+                tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
+                        .withStyle(ChatFormatting.GOLD));
+            }
+            graphics.renderTooltip(this.minecraft.font, tooltipLines, java.util.Optional.empty(),
                     mouseX, mouseY + yOffset);
         } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
             Slot slot = this.menu.getSlot(1);
-            int yOffset = slot.hasItem() ? -20 : 0;
-            graphics.renderTooltip(this.minecraft.font,
-                    Component.translatable("gui.createredstonelinkgui.frequency_second")
-                            .withStyle(ChatFormatting.BLUE),
+            int lineCount = 1 + (isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
+            List<Component> tooltipLines = new ArrayList<>();
+            tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_second")
+                    .withStyle(ChatFormatting.BLUE));
+            if (isFrequencySymbol(slot.getItem())) {
+                tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
+                        .withStyle(ChatFormatting.GOLD));
+            }
+            graphics.renderTooltip(this.minecraft.font, tooltipLines, java.util.Optional.empty(),
                     mouseX, mouseY + yOffset);
         }
-        // =================================================
+        // ===================================
 
         this.renderTooltip(graphics, mouseX, mouseY);
     }

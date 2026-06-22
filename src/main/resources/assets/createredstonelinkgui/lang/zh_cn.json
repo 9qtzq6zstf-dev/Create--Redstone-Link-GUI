@@ -29,5 +29,6 @@
   "gui.createredstonelinkgui.frequency_first": "频率 #1",
   "gui.createredstonelinkgui.frequency_second": "频率 #2",
   "gui.createredstonelinkgui.own": "左键认领",
-  "gui.createredstonelinkgui.forfeit": "左键取消认领"
+  "gui.createredstonelinkgui.forfeit": "左键取消认领",
+  "gui.createredstonelinkgui.middle_click_swap": "中键打开符号列表"
 }
