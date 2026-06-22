@@ -4,6 +4,7 @@ import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
+import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerOverlay;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
 import net.minecraft.ChatFormatting;
@@ -12,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -58,6 +60,9 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
     public Rect2i blockPreviewBounds;
+
+    // ==================== 频率符号选择器覆盖层 ====================
+    private SymbolPickerOverlay symbolPicker;
 
     // ==================== 构造函数 ====================
     public RedstoneLinkConfigScreen(RedstoneLinkMenu menu, Inventory playerInv, Component title) {
@@ -148,32 +153,113 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         }
     }
 
+    // ==================== 频率符号检测 ====================
+    /**
+     * Checks if the given ItemStack is a frequency mod symbol (excluding symbol_frame and symbol_empty).
+     * Uses only BuiltInRegistries — no frequency-mod imports.
+     */
+    private static boolean isFrequencySymbol(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (!id.getNamespace().equals("frequency")) return false;
+        String path = id.getPath();
+        if (!path.startsWith("symbol_")) return false;
+        if (path.equals("symbol_frame")) return false;
+        if (path.equals("symbol_empty")) return false;
+        return true;
+    }
+
+    /**
+     * Returns the frequency slot index (0 or 1) hit by the given mouse coordinates, or -1 if none.
+     */
+    private int hitTestFrequencySlot(double mouseX, double mouseY) {
+        if (slot1Bounds != null && slot1Bounds.contains((int) mouseX, (int) mouseY)) return 0;
+        if (slot2Bounds != null && slot2Bounds.contains((int) mouseX, (int) mouseY)) return 1;
+        return -1;
+    }
+
+    // ==================== 输入处理 ====================
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (symbolPicker != null) {
+            if (symbolPicker.isMouseOver(mouseX, mouseY)) {
+                if (symbolPicker.mouseClicked(mouseX, mouseY, button)) {
+                    symbolPicker = null; // symbol was picked, close overlay
+                    return true;
+                }
+                // Click was inside overlay but not on an actionable element (e.g. empty space) — keep overlay open
+                return true;
+            } else {
+                // Clicked outside overlay — dismiss it
+                symbolPicker = null;
+                return true;
+            }
+        }
+
+        // Middle-click on frequency slot with frequency symbol → open picker
+        if (button == 2) {
+            int slot = hitTestFrequencySlot(mouseX, mouseY);
+            if (slot >= 0) {
+                ItemStack current = this.menu.getSlot(slot).getItem();
+                if (isFrequencySymbol(current)) {
+                    symbolPicker = new SymbolPickerOverlay(
+                        (idx, stack) -> {
+                            updateFrequencySlot(idx, stack);
+                        },
+                        slot,
+                        this.font
+                    );
+                    return true;
+                }
+            }
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (symbolPicker != null) {
+            symbolPicker = null;
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
     // ==================== 渲染 ====================
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
+        if (symbolPicker == null) {
+            // Normal rendering
+            this.renderBackground(graphics, mouseX, mouseY, partialTick);
+            super.render(graphics, mouseX, mouseY, partialTick);
 
-        // ========== 频率槽位工具提示（来自文件一） ==========
-        // 频率槽位工具提示（根据槽位是否有物品调整垂直偏移，文字设为蓝色）
-        if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
-            Slot slot = this.menu.getSlot(0);
-            int yOffset = slot.hasItem() ? -20 : 0;
-            graphics.renderTooltip(this.minecraft.font,
-                    Component.translatable("gui.createredstonelinkgui.frequency_first")
-                            .withStyle(ChatFormatting.BLUE),
-                    mouseX, mouseY + yOffset);
-        } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
-            Slot slot = this.menu.getSlot(1);
-            int yOffset = slot.hasItem() ? -20 : 0;
-            graphics.renderTooltip(this.minecraft.font,
-                    Component.translatable("gui.createredstonelinkgui.frequency_second")
-                            .withStyle(ChatFormatting.BLUE),
-                    mouseX, mouseY + yOffset);
+            // ========== 频率槽位工具提示（来自文件一） ==========
+            // 频率槽位工具提示（根据槽位是否有物品调整垂直偏移，文字设为蓝色）
+            if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
+                Slot slot = this.menu.getSlot(0);
+                int yOffset = slot.hasItem() ? -20 : 0;
+                graphics.renderTooltip(this.minecraft.font,
+                        Component.translatable("gui.createredstonelinkgui.frequency_first")
+                                .withStyle(ChatFormatting.BLUE),
+                        mouseX, mouseY + yOffset);
+            } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
+                Slot slot = this.menu.getSlot(1);
+                int yOffset = slot.hasItem() ? -20 : 0;
+                graphics.renderTooltip(this.minecraft.font,
+                        Component.translatable("gui.createredstonelinkgui.frequency_second")
+                                .withStyle(ChatFormatting.BLUE),
+                        mouseX, mouseY + yOffset);
+            }
+            // =================================================
+
+            this.renderTooltip(graphics, mouseX, mouseY);
+        } else {
+            // Overlay mode — render screen behind overlay
+            this.renderBackground(graphics, mouseX, mouseY, partialTick);
+            super.render(graphics, mouseX, mouseY, partialTick);
+            symbolPicker.render(graphics, mouseX, mouseY, partialTick);
         }
-        // =================================================
-
-        this.renderTooltip(graphics, mouseX, mouseY);
     }
 
     // ==================== 背景绘制 ====================
