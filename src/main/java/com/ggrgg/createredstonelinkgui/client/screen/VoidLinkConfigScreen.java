@@ -147,7 +147,6 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
         String path = id.getPath();
         if (!path.startsWith("symbol_")) return false;
         if (path.equals("symbol_frame")) return false;
-        if (path.equals("symbol_empty")) return false;
         return true;
     }
 

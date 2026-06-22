@@ -165,7 +165,6 @@ public class RedstoneLinkConfigScreen extends AbstractContainerScreen<RedstoneLi
         String path = id.getPath();
         if (!path.startsWith("symbol_")) return false;
         if (path.equals("symbol_frame")) return false;
-        if (path.equals("symbol_empty")) return false;
         return true;
     }
 

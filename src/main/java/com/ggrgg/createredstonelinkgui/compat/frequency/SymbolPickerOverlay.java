@@ -345,7 +345,7 @@ public class SymbolPickerOverlay {
 
         int labelX = panelX + 9;
 
-        // Category collapse/expand toggle
+        // Category collapse/expand toggle (returns false so the overlay stays open)
         for (int cat = 0; cat < 3; cat++) {
             String label = categoryLabel(cat);
             int textWidth = font.width(label);
@@ -354,18 +354,18 @@ public class SymbolPickerOverlay {
                     && mouseY < categoryLabelY[cat] + 10) {
                 collapsed[cat] = !collapsed[cat];
                 rebuildLayout();
-                return true;
+                return false; // overlay stays open
             }
         }
 
-        // Letter case checkbox
+        // Letter case checkbox (returns false so the overlay stays open)
         if (!collapsed[1]) {
             if (mouseX >= labelX + 10 && mouseX < labelX + 10 + CHECKBOX_SIZE
                     && mouseY >= checkboxY + 1 && mouseY < checkboxY + 1 + CHECKBOX_SIZE) {
                 lettersUppercase = !lettersUppercase;
                 currentLetters = lettersUppercase ? uppercase : lowercase;
                 rebuildLayout();
-                return true;
+                return false; // overlay stays open
             }
         }
 
