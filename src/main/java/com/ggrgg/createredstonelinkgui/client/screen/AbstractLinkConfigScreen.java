@@ -195,6 +195,9 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
                     Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(), slot));
                     return true;
                 }
+                // Consume middle-click even for non-symbol items to
+                // prevent it from falling through to menu.clicked() (button 2 → left-click behavior)
+                return true;
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
