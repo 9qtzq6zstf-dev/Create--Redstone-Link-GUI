@@ -3,26 +3,32 @@ package com.ggrgg.createredstonelinkgui.compat.frequency;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiConsumer;
+
+import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * A picker overlay for frequency mod symbols, rendered on top of our existing config screen.
+ * A standalone screen for choosing frequency mod symbols.
  * Visually matches maze.frequency.client.gui.SymbolSwapScreen layout and rendering.
- * Necessary because the original code isn't fully compatible with our use case, and I don't want to add dependency.
+ * When a symbol is picked (or Escape is pressed), reopens the original frequency config
+ * menu by sending OpenLinkMenuPayload to the server.
+ *
  * Reference source (frequency-create-NeoForge-1.21.1):
  *   src/main/java/maze/frequency/client/gui/SymbolSwapScreen.java
  *   src/main/java/maze/frequency/client/gui/DynamicGuiRenderer.java
  */
-public class SymbolPickerOverlay {
+public class SymbolPickerScreen extends Screen {
 
     // ==================== Layout constants (direct copy from SymbolSwapScreen) ====================
     private static final int BUTTON_SIZE = 20;
@@ -88,7 +94,8 @@ public class SymbolPickerOverlay {
     );
 
     // ==================== State ====================
-    private final List<ItemStack> allSymbols = new ArrayList<>();
+    private final BlockPos blockPos;
+    private final int slotIndex;
     private final List<ItemStack> digits = new ArrayList<>();
     private final List<ItemStack> uppercase = new ArrayList<>();
     private final List<ItemStack> lowercase = new ArrayList<>();
@@ -97,10 +104,6 @@ public class SymbolPickerOverlay {
     private boolean lettersUppercase = true;
 
     private final boolean[] collapsed = { false, false, true }; // symbols collapsed by default
-
-    private final BiConsumer<Integer, ItemStack> onPick;
-    private final int slotIndex;
-    private final Font font;
 
     // Computed layout
     private int panelX, panelY, panelWidth, panelHeight;
@@ -114,10 +117,15 @@ public class SymbolPickerOverlay {
         int y;
     }
 
-    public SymbolPickerOverlay(BiConsumer<Integer, ItemStack> onPick, int slotIndex, Font font) {
-        this.onPick = onPick;
+    public SymbolPickerScreen(BlockPos blockPos, int slotIndex) {
+        super(Component.translatable("gui.frequency.symbol_swap.title"));
+        this.blockPos = blockPos;
         this.slotIndex = slotIndex;
-        this.font = font;
+    }
+
+    @Override
+    protected void init() {
+        super.init();
         loadSymbols();
         rebuildLayout();
     }
@@ -129,19 +137,17 @@ public class SymbolPickerOverlay {
             ResourceLocation id = ResourceLocation.fromNamespaceAndPath("frequency", name);
             var item = itemRegistry.get(id);
             if (item != null) {
-                allSymbols.add(new ItemStack(item));
-            }
-        }
-        for (ItemStack stack : allSymbols) {
-            String path = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-            if (path.matches("symbol_[0-9]")) {
-                digits.add(stack);
-            } else if (path.matches("symbol_[a-z]")) {
-                uppercase.add(stack);
-            } else if (path.matches("symbol_[a-z]_small")) {
-                lowercase.add(stack);
-            } else {
-                specials.add(stack);
+                String path = id.getPath();
+                ItemStack stack = new ItemStack(item);
+                if (path.matches("symbol_[0-9]")) {
+                    digits.add(stack);
+                } else if (path.matches("symbol_[a-z]")) {
+                    uppercase.add(stack);
+                } else if (path.matches("symbol_[a-z]_small")) {
+                    lowercase.add(stack);
+                } else {
+                    specials.add(stack);
+                }
             }
         }
         currentLetters = lettersUppercase ? uppercase : lowercase;
@@ -149,7 +155,6 @@ public class SymbolPickerOverlay {
 
     // ==================== Layout (mirrors SymbolSwapScreen.rebuildLayout) ====================
     private void rebuildLayout() {
-        // Determine content dimensions
         int fixedContentWidth = MAX_ITEMS_PER_ROW * (BUTTON_SIZE + SPACING) - SPACING + 28;
 
         List<List<ItemStack>> catItems = List.of(digits, currentLetters, specials);
@@ -174,9 +179,8 @@ public class SymbolPickerOverlay {
         panelWidth = CORNER_WIDTH * 2 + contentWidth;
         panelHeight = HEADER_HEIGHT + contentHeight + BOTTOM_HEIGHT;
 
-        Minecraft mc = Minecraft.getInstance();
-        panelX = (mc.getWindow().getGuiScaledWidth() - panelWidth) / 2;
-        panelY = (mc.getWindow().getGuiScaledHeight() - panelHeight) / 2;
+        panelX = (this.width - panelWidth) / 2;
+        panelY = (this.height - panelHeight) / 2;
 
         categoryRows.clear();
         for (int cat = 0; cat < 3; cat++) {
@@ -211,24 +215,16 @@ public class SymbolPickerOverlay {
         }
     }
 
-    // ==================== Rendering (direct copy of DynamicGuiRenderer + SymbolSwapScreen render logic) ====================
-
-    /**
-     * Render the picker panel. Call from screen's render() when overlay is active.
-     * Reference source (frequency-create-NeoForge-1.21.1):
-     *   src/main/java/maze/frequency/client/gui/DynamicGuiRenderer.java
-     *   src/main/java/maze/frequency/client/gui/SymbolSwapScreen.java
-     */
+    // ==================== Rendering (direct copy of DynamicGuiRenderer + SymbolSwapScreen) ====================
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Darken background behind panel
-        graphics.fill(0, 0, Minecraft.getInstance().getWindow().getGuiScaledWidth(),
-                Minecraft.getInstance().getWindow().getGuiScaledHeight(), 0x88000000);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
 
         renderGuiPanel(graphics);
 
         int labelX = panelX + 9;
 
-        // Category labels (mirrors SymbolSwapScreen.renderBg)
         int iconYoff = (font.lineHeight - 6) / 2;
         for (int cat = 0; cat < 3; cat++) {
             int iconU = collapsed[cat] ? 46 : 51;
@@ -238,7 +234,6 @@ public class SymbolPickerOverlay {
             graphics.drawString(font, categoryLabel(cat), labelX + 8, categoryLabelY[cat], 0xF8F8EC, true);
         }
 
-        // Checkbox for letter case
         if (!collapsed[1]) {
             int cbU = lettersUppercase ? 54 : 46;
             graphics.blit(ATLAS, labelX + 10, checkboxY + 1, cbU, 8, CHECKBOX_SIZE, CHECKBOX_SIZE, ATLAS_WIDTH, ATLAS_HEIGHT);
@@ -247,7 +242,6 @@ public class SymbolPickerOverlay {
                     labelX + 22, checkboxY + 1, 0xF8F8EC, true);
         }
 
-        // Item rows (mirrors SymbolSwapScreen.renderBg)
         for (CategoryRow row : categoryRows) {
             if (row.items.isEmpty()) continue;
             int startX = getRowStartX(row);
@@ -258,7 +252,6 @@ public class SymbolPickerOverlay {
             }
         }
 
-        // Hover tooltips (mirrors SymbolSwapScreen.render)
         for (CategoryRow row : categoryRows) {
             if (row.items.isEmpty()) continue;
             int startX = getRowStartX(row);
@@ -276,7 +269,6 @@ public class SymbolPickerOverlay {
      * Direct copy of DynamicGuiRenderer.renderGui
      */
     private void renderGuiPanel(GuiGraphics graphics) {
-        int contentW = panelWidth - CORNER_WIDTH * 2;
         int contentH = contentHeight;
 
         // Header
@@ -289,11 +281,8 @@ public class SymbolPickerOverlay {
         // Content
         int contentX = panelX;
         int contentTopY = panelY + HEADER_HEIGHT;
-        // Left edge
         graphics.blit(ATLAS, contentX, contentTopY, EDGE_WIDTH, contentH, EDGE_LEFT_U, EDGE_LEFT_V, EDGE_WIDTH, EDGE_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        // Right edge
         graphics.blit(ATLAS, contentX + panelWidth - EDGE_WIDTH, contentTopY, EDGE_WIDTH, contentH, EDGE_RIGHT_U, EDGE_RIGHT_V, EDGE_WIDTH, EDGE_HEIGHT, ATLAS_WIDTH, ATLAS_HEIGHT);
-        // Background tiled
         int bgContentWidth = panelWidth - EDGE_WIDTH * 2;
         int bgContentX = contentX + EDGE_WIDTH;
         for (int j = 0; j < contentH; j += BACKGROUND_TILE_SIZE) {
@@ -336,16 +325,13 @@ public class SymbolPickerOverlay {
 
     // ==================== Input handling ====================
 
-    /**
-     * Handle mouse click. Returns true if the click was consumed by the overlay.
-     * Mirrors SymbolSwapScreen.mouseClicked
-     */
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button != 0) return false;
 
         int labelX = panelX + 9;
 
-        // Category collapse/expand toggle (returns false so the overlay stays open)
+        // Category collapse/expand toggle
         for (int cat = 0; cat < 3; cat++) {
             String label = categoryLabel(cat);
             int textWidth = font.width(label);
@@ -354,30 +340,35 @@ public class SymbolPickerOverlay {
                     && mouseY < categoryLabelY[cat] + 10) {
                 collapsed[cat] = !collapsed[cat];
                 rebuildLayout();
-                return false; // overlay stays open
+                return true;
             }
         }
 
-        // Letter case checkbox (returns false so the overlay stays open)
+        // Letter case checkbox
         if (!collapsed[1]) {
             if (mouseX >= labelX + 10 && mouseX < labelX + 10 + CHECKBOX_SIZE
                     && mouseY >= checkboxY + 1 && mouseY < checkboxY + 1 + CHECKBOX_SIZE) {
                 lettersUppercase = !lettersUppercase;
                 currentLetters = lettersUppercase ? uppercase : lowercase;
                 rebuildLayout();
-                return false; // overlay stays open
+                return true;
             }
         }
 
-        // Symbol selection
+        // Symbol selection — updates frequency and reopens config menu
         for (CategoryRow row : categoryRows) {
             if (row.items.isEmpty()) continue;
             int startX = getRowStartX(row);
             for (int i = 0; i < row.items.size(); i++) {
                 int x = startX + i * (BUTTON_SIZE + SPACING);
                 if (mouseX >= x && mouseX < x + BUTTON_SIZE && mouseY >= row.y && mouseY < row.y + BUTTON_SIZE) {
-                    onPick.accept(slotIndex, row.items.get(i));
-                    return true; // caller should close overlay
+                    // Send frequency update to server
+                    PacketDistributor.sendToServer(
+                        new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
+                            blockPos, row.items.get(i), slotIndex));
+                    // Reopen the config menu so server re-validates everything
+                    reopenConfigMenu();
+                    return true;
                 }
             }
         }
@@ -385,8 +376,19 @@ public class SymbolPickerOverlay {
         return false;
     }
 
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX >= panelX && mouseX < panelX + panelWidth
-            && mouseY >= panelY && mouseY < panelY + panelHeight;
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // Escape or inventory key — reopen config menu without changes
+        reopenConfigMenu();
+        return true;
+    }
+
+    /**
+     * Sends a packet to the server to reopen the link config menu.
+     * The server will validate the block still exists and open a fresh container.
+     */
+    private void reopenConfigMenu() {
+        PacketDistributor.sendToServer(new OpenLinkMenuPayload(blockPos));
+        this.onClose();
     }
 }

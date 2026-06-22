@@ -5,9 +5,10 @@ import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload;
 import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
-import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerOverlay;
+import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerScreen;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -56,9 +57,6 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     public Rect2i slot1Bounds;
     public Rect2i slot2Bounds;
     public Rect2i blockPreviewBounds;
-
-    // ==================== 频率符号选择器覆盖层 ====================
-    private SymbolPickerOverlay symbolPicker;
 
     public VoidLinkConfigScreen(VoidLinkMenu menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
@@ -137,7 +135,7 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
 
     // ==================== 频率符号检测 ====================
     /**
-     * Checks if the given ItemStack is a frequency mod symbol (excluding symbol_frame and symbol_empty).
+     * Checks if the given ItemStack is a frequency mod symbol (excluding symbol_frame).
      * Uses only BuiltInRegistries — no frequency-mod imports.
      */
     private static boolean isFrequencySymbol(ItemStack stack) {
@@ -162,30 +160,13 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     // ==================== 输入处理 ====================
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (symbolPicker != null) {
-            if (symbolPicker.isMouseOver(mouseX, mouseY)) {
-                if (symbolPicker.mouseClicked(mouseX, mouseY, button)) {
-                    symbolPicker = null; // symbol was picked, close overlay
-                    return true;
-                }
-                return true;
-            } else {
-                symbolPicker = null;
-                return true;
-            }
-        }
-
-        // Middle-click on frequency slot with frequency symbol → open picker
+        // Middle-click on frequency slot with frequency symbol → open symbol picker
         if (button == 2) {
             int slot = hitTestFrequencySlot(mouseX, mouseY);
             if (slot >= 0) {
                 ItemStack current = this.menu.getSlot(slot).getItem();
                 if (isFrequencySymbol(current)) {
-                    symbolPicker = new SymbolPickerOverlay(
-                        (idx, stack) -> updateFrequencySlot(idx, stack),
-                        slot,
-                        this.font
-                    );
+                    Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(), slot));
                     return true;
                 }
             }
@@ -195,44 +176,29 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (symbolPicker != null) {
-            symbolPicker = null;
-            return true;
-        }
-        return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (symbolPicker == null) {
-            this.renderBackground(graphics, mouseX, mouseY, partialTick);
-            super.render(graphics, mouseX, mouseY, partialTick);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
 
-            // ========== 频率槽位工具提示（同 RedstoneLinkConfigScreen） ==========
-            if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
-                Slot slot = this.menu.getSlot(0);
-                int yOffset = slot.hasItem() ? -20 : 0;
-                graphics.renderTooltip(this.minecraft.font,
-                        Component.translatable("gui.createredstonelinkgui.frequency_first")
-                                .withStyle(ChatFormatting.BLUE),
-                        mouseX, mouseY + yOffset);
-            } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
-                Slot slot = this.menu.getSlot(1);
-                int yOffset = slot.hasItem() ? -20 : 0;
-                graphics.renderTooltip(this.minecraft.font,
-                        Component.translatable("gui.createredstonelinkgui.frequency_second")
-                                .withStyle(ChatFormatting.BLUE),
-                        mouseX, mouseY + yOffset);
-            }
-            // ==============================================================
-
-            this.renderTooltip(graphics, mouseX, mouseY);
-        } else {
-            this.renderBackground(graphics, mouseX, mouseY, partialTick);
-            super.render(graphics, mouseX, mouseY, partialTick);
-            symbolPicker.render(graphics, mouseX, mouseY, partialTick);
+        // ========== 频率槽位工具提示（同 RedstoneLinkConfigScreen） ==========
+        if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(0);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_first")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
+        } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
+            Slot slot = this.menu.getSlot(1);
+            int yOffset = slot.hasItem() ? -20 : 0;
+            graphics.renderTooltip(this.minecraft.font,
+                    Component.translatable("gui.createredstonelinkgui.frequency_second")
+                            .withStyle(ChatFormatting.BLUE),
+                    mouseX, mouseY + yOffset);
         }
+        // ==============================================================
+
+        this.renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override
@@ -295,7 +261,6 @@ public class VoidLinkConfigScreen extends AbstractContainerScreen<VoidLinkMenu> 
             }
             graphics.renderItem(cachedStack, getX(), getY());
 
-            // 工具提示（悬停时显示）
             if (isHovered()) {
                 boolean owned = false;
                 Object behaviour = menu.getBehaviour();
