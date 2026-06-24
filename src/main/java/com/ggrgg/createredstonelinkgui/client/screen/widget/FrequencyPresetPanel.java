@@ -29,24 +29,23 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public class FrequencyPresetPanel {
 
-    // ==================== 面板尺寸 ====================
-    public static final int PANEL_WIDTH = 65;
-    public static final int PANEL_HEIGHT = 110;
-
-    // ==================== 纹理资源 ====================
-    private static final ResourceLocation PANEL_TEXTURE =
-        ResourceLocation.parse("createredstonelinkgui:textures/gui/frequency_preset_panel.png");
-
-    // ==================== 假脱机坐标（相对于面板左上角） ====================
+    // ==================== 布局常量（先声明，供插槽和面板尺寸引用） ====================
     private static final int SLOT_X = 3;
     private static final int SLOT_Y_START = 16;
     private static final int SLOT_SPACING_Y = 22;
     private static final int SLOT_SIZE = 16;
-
-    // ==================== 按钮坐标（相对于面板左上角） ====================
     private static final int COPY_BTN_X = 39;
     private static final int PASTE_BTN_X = 51;
     private static final int BTN_SIZE = 12;
+
+    // ==================== 面板尺寸（从PRESET_COUNT自动计算） ====================
+    public static final int PANEL_WIDTH = 65;
+    public static final int PANEL_HEIGHT =
+        SLOT_Y_START + FrequencyPresetData.PRESET_COUNT * SLOT_SPACING_Y + 10;
+
+    // ==================== 纹理资源 ====================
+    private static final ResourceLocation PANEL_TEXTURE =
+        ResourceLocation.parse("createredstonelinkgui:textures/gui/frequency_preset_panel.png");
 
     // ==================== 纹理UV坐标（当useTexture=true时使用） ====================
     private static final int PANEL_U = 0;

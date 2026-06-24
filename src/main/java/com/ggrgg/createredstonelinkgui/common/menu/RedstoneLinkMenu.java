@@ -29,10 +29,10 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         () -> IMenuTypeExtension.create((windowId, inv, data) -> new RedstoneLinkMenu(windowId, inv, data.readBlockPos()))
     );
 
-    // Preset slot IDs (slots 2-9 for 4 rows × 2 columns)
+    // Preset slot IDs (2 + 4 rows × 2 columns = slots 2-9)
     public static final int PRESET_SLOT_START = 2;
     public static final int PRESET_SLOTS_PER_ROW = 2;
-    public static final int PRESET_ROWS = 4;
+    public static final int PRESET_ROWS = FrequencyPresetData.PRESET_COUNT;
 
     // Panel floats at panelX = leftPos - 25, panelY = contentTop + 2.
     // Slot absolute = panelX + 3 + col*18, panelY + 16 + row*22
