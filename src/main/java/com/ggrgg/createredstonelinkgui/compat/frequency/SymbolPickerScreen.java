@@ -3,6 +3,7 @@ package com.ggrgg.createredstonelinkgui.compat.frequency;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.ggrgg.createredstonelinkgui.common.network.OpenLinkMenuPayload;
 
@@ -95,6 +96,7 @@ public class SymbolPickerScreen extends Screen {
     // ==================== State ====================
     private final BlockPos blockPos;
     private final int slotIndex;
+    private final Consumer<ItemStack> onPick; // callback when a symbol is selected
     private final List<ItemStack> digits = new ArrayList<>();
     private final List<ItemStack> uppercase = new ArrayList<>();
     private final List<ItemStack> lowercase = new ArrayList<>();
@@ -116,10 +118,24 @@ public class SymbolPickerScreen extends Screen {
         int y;
     }
 
+    /**
+     * Creates a SymbolPickerScreen that sends a RedstoneLinkFrequencyPayload when a symbol is picked.
+     */
     public SymbolPickerScreen(BlockPos blockPos, int slotIndex) {
+        this(blockPos, stack -> PacketDistributor.sendToServer(
+            new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
+                blockPos, stack, slotIndex)));
+    }
+
+    /**
+     * Creates a SymbolPickerScreen with a custom callback for when a symbol is picked.
+     * Use this for preset slots to send a PresetSlotUpdatePayload instead.
+     */
+    public SymbolPickerScreen(BlockPos blockPos, Consumer<ItemStack> onPick) {
         super(Component.translatable("gui.frequency.symbol_swap.title"));
         this.blockPos = blockPos;
-        this.slotIndex = slotIndex;
+        this.slotIndex = -1; // unused when onPick is provided
+        this.onPick = onPick;
     }
 
     @Override
@@ -354,17 +370,22 @@ public class SymbolPickerScreen extends Screen {
             }
         }
 
-        // Symbol selection — updates frequency and reopens config menu
+        // Symbol selection
         for (CategoryRow row : categoryRows) {
             if (row.items.isEmpty()) continue;
             int startX = getRowStartX(row);
             for (int i = 0; i < row.items.size(); i++) {
                 int x = startX + i * (BUTTON_SIZE + SPACING);
                 if (mouseX >= x && mouseX < x + BUTTON_SIZE && mouseY >= row.y && mouseY < row.y + BUTTON_SIZE) {
-                    // Send frequency update to server
-                    PacketDistributor.sendToServer(
-                        new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
-                            blockPos, row.items.get(i), slotIndex));
+                    ItemStack picked = row.items.get(i);
+                    // Use callback if provided, otherwise send frequency payload
+                    if (onPick != null) {
+                        onPick.accept(picked);
+                    } else {
+                        PacketDistributor.sendToServer(
+                            new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
+                                blockPos, picked, slotIndex));
+                    }
                     // Close this screen; removed() will reopen the config menu
                     this.onClose();
                     return true;
