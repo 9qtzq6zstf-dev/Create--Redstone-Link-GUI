@@ -41,9 +41,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public class FrequencyPresetPanel {
 
     // ==================== 布局常量 ====================
-    private static final int SLOT_X = 7;
+    private static final int SLOT_X = 6;
     private static final int SLOT_Y_OFFSET = 8;
-    private static final int SLOT_SPACING_X = 30;      // 7+16+7
+    private static final int SLOT_SPACING_X = 26;      // 6+16+10 between slot0 and slot1
     private static final int SLOT_SIZE = 16;
     private static final int COPY_BTN_X = 55;
     private static final int PASTE_BTN_X = 75;
@@ -51,7 +51,7 @@ public class FrequencyPresetPanel {
     private static final int BTN_SIZE = 18;
 
     // ==================== 面板尺寸 ====================
-    public static final int PANEL_WIDTH = 98;
+    public static final int PANEL_WIDTH = 101;
     public static final int HEADER_HEIGHT = 21;
     public static final int ROW_HEIGHT = 32;
     public static final int FOOTER_HEIGHT = 13;
@@ -59,6 +59,7 @@ public class FrequencyPresetPanel {
         HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT + FOOTER_HEIGHT;
 
     // ==================== 纹理资源 ====================
+    // 提前留的位置，方便以后换成自定义纹理
     private static final ResourceLocation PANEL_TEXTURE =
         ResourceLocation.parse("createredstonelinkgui:textures/gui/frequency_preset_panel.png");
 
@@ -71,7 +72,7 @@ public class FrequencyPresetPanel {
     private static final int FOOTER_V = 149;
 
     // ==================== 纹理UV坐标 — 槽位/按钮 ====================
-    private static final int SLOT_UV_U = 7;
+    private static final int SLOT_UV_U = 6;
     private static final int SLOT_UV_V = 21;
     private static final int COPY_BTN_UV_U = 55;
     private static final int COPY_BTN_UV_V = 21;
@@ -157,8 +158,6 @@ public class FrequencyPresetPanel {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
-
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
                 graphics.blit(PANEL_TEXTURE, slotX, rowY + SLOT_Y_OFFSET, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
@@ -205,8 +204,6 @@ public class FrequencyPresetPanel {
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
-
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
 
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;

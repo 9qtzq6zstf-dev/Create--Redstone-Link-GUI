@@ -30,9 +30,9 @@ public class VoidLinkMenu extends AbstractContainerMenu {
     public static final int PRESET_SLOT_START = 2;
     public static final int PRESET_SLOTS_PER_ROW = 2;
     public static final int PRESET_ROWS = FrequencyPresetData.PRESET_COUNT;
-    public static final int PRESET_SLOT_X_START = -51;
+    public static final int PRESET_SLOT_X_START = -55;
     public static final int PRESET_SLOT_Y_START = 37;
-    public static final int PRESET_SLOT_SPACING_X = 30;
+    public static final int PRESET_SLOT_SPACING_X = 26;
     public static final int PRESET_SLOT_SPACING_Y = 32;
 
     private final BlockPos pos;

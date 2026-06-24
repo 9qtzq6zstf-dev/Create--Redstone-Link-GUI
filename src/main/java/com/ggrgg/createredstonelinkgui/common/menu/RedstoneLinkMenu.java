@@ -34,13 +34,13 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public static final int PRESET_SLOTS_PER_ROW = 2;
     public static final int PRESET_ROWS = FrequencyPresetData.PRESET_COUNT;
 
-    // Panel floats at panelX = leftPos - 58, panelY = contentTop + 2.
-    // Slot absolute = panelX + 7 + col*30, panelY + 21 + row*32 + 8
-    // Relative to leftPos: X = (leftPos - 58) + 7 + col*30 - leftPos = -51 + col*30
+    // Panel floats at panelX = leftPos - 61, panelY = contentTop + 2.
+    // Slot absolute = panelX + 6 + col*26, panelY + 21 + row*32 + 8
+    // Relative to leftPos: X = (leftPos - 61) + 6 + col*26 - leftPos = -55 + col*26
     // Relative to topPos: Y = (topPos + 6) + 2 + 21 + 8 + row*32 - topPos = 37 + row*32
-    public static final int PRESET_SLOT_X_START = -51;
+    public static final int PRESET_SLOT_X_START = -55;
     public static final int PRESET_SLOT_Y_START = 37;
-    public static final int PRESET_SLOT_SPACING_X = 30;
+    public static final int PRESET_SLOT_SPACING_X = 26;
     public static final int PRESET_SLOT_SPACING_Y = 32;
 
     private final BlockPos pos;
