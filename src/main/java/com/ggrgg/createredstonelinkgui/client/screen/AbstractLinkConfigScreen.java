@@ -136,7 +136,10 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 40;
         int panelY = contentTop + 2;
         FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
-        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData);
+        // Copy is enabled if either frequency slot has an item
+        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData,
+            () -> !this.menu.getSlot(0).getItem().isEmpty()
+               || !this.menu.getSlot(1).getItem().isEmpty());
         this.presetPanelBounds = new Rect2i(panelX, panelY,
             FrequencyPresetPanel.PANEL_WIDTH, FrequencyPresetPanel.PANEL_HEIGHT);
 
