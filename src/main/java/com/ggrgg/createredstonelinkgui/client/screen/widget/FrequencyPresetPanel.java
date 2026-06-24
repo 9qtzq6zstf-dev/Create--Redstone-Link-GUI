@@ -14,6 +14,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -199,20 +200,45 @@ public class FrequencyPresetPanel {
         }
     }
 
+    // ==================== 频率符号检测 ====================
+    private static boolean isFrequencySymbol(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (!id.getNamespace().equals("frequency")) return false;
+        String path = id.getPath();
+        if (!path.startsWith("symbol_")) return false;
+        if (path.equals("symbol_frame")) return false;
+        return true;
+    }
+
     // ==================== 工具提示 ====================
     public void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+        Font font = Minecraft.getInstance().font;
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             for (int col = 0; col < 2; col++) {
                 Rect2i bounds = slotBounds.get(row * 2 + col);
                 if (bounds.contains(mouseX, mouseY)) {
                     ItemStack stack = presetData.getStack(row, col);
+                    Component label = Component.translatable(
+                        col == 0 ? "gui.createredstonelinkgui.frequency_first"
+                                 : "gui.createredstonelinkgui.frequency_second")
+                        .withStyle(ChatFormatting.BLUE);
                     if (!stack.isEmpty()) {
-                        graphics.renderTooltip(Minecraft.getInstance().font, stack, mouseX, mouseY);
+                        List<Component> tooltipLines = new ArrayList<>();
+                        tooltipLines.add(label);
+                        int lineCount = 1;
+                        if (isFrequencySymbol(stack)) {
+                            tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
+                                    .withStyle(ChatFormatting.GOLD));
+                            lineCount = 2;
+                        }
+                        int yOffset = -20 - (lineCount - 1) * font.lineHeight;
+                        graphics.renderTooltip(font, tooltipLines,
+                            java.util.Optional.empty(), mouseX, mouseY + yOffset);
                     } else {
-                        graphics.renderTooltip(Minecraft.getInstance().font,
-                            Component.translatable("gui.createredstonelinkgui.preset_slot_empty",
-                                row + 1, col + 1).withStyle(ChatFormatting.GRAY),
-                            mouseX, mouseY);
+                        int yOffset = -20;
+                        graphics.renderTooltip(font,
+                            java.util.List.of(label), java.util.Optional.empty(), mouseX, mouseY + yOffset);
                     }
                     return;
                 }
