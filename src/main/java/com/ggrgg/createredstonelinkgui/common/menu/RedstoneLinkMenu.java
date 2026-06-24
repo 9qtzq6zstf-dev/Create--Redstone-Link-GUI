@@ -167,9 +167,43 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             }
             return;
         }
-        // Preset slots (2-9) - JEI ghost recipe system calls slot.set() directly,
-        // bypassing clicked(). For normal clicks, just block item pickup.
+        // Preset slots (2-9) - same interactions as frequency slots
         if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
+            FrequencyPresetData presetData = FrequencyPresetData.get(player);
+            int presetIndex = (slotId - PRESET_SLOT_START) / PRESET_SLOTS_PER_ROW;
+            int slotIndex = (slotId - PRESET_SLOT_START) % PRESET_SLOTS_PER_ROW;
+            
+            // Right-click (button 1) or Q-throw: clear the slot
+            if (button == 1 || clickType == ClickType.THROW) {
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
+                }
+                this.getSlot(slotId).set(ItemStack.EMPTY);
+                return;
+            }
+            
+            // Left-click (button 0): place carried item
+            ItemStack carried = getCarried();
+            if (!carried.isEmpty()) {
+                ItemStack placed = carried.copy();
+                placed.setCount(1);
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, placed);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, placed));
+                }
+                this.getSlot(slotId).set(placed);
+            } else {
+                // Carried is empty, clear the slot
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
+                }
+                this.getSlot(slotId).set(ItemStack.EMPTY);
+            }
             return;
         }
         super.clicked(slotId, button, clickType, player);

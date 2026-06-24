@@ -109,7 +109,8 @@ public class AddonJEIPlugin implements IModPlugin {
             var stack = typed.getIngredient(VanillaTypes.ITEM_STACK);
             if (stack.isEmpty()) return List.of();
             ItemStack item = stack.get();
-            List<Target<I>> targets = new ArrayList<>(2);
+            List<Target<I>> targets = new ArrayList<>(10);
+            // Frequency slots
             targets.add(new Target<>() {
                 @Override public Rect2i getArea() { return screen.slot1Bounds; }
                 @Override public void accept(I ing) { screen.updateFrequencySlot(0, item); }
@@ -118,6 +119,67 @@ public class AddonJEIPlugin implements IModPlugin {
                 @Override public Rect2i getArea() { return screen.slot2Bounds; }
                 @Override public void accept(I ing) { screen.updateFrequencySlot(1, item); }
             });
+            // Preset slots
+            if (screen.presetPanel != null) {
+                for (int row = 0; row < 4; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        final int r = row;
+                        final int c = col;
+                        Rect2i bounds = screen.presetPanel.getSlotBounds(row, col);
+                        if (bounds != null) {
+                            targets.add(new Target<>() {
+                                @Override public Rect2i getArea() { return bounds; }
+                                @Override public void accept(I ing) {
+                                    screen.presetPanel.getPresetData().setStack(r, c, item);
+                                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                        new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(r, c, item));
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            return targets;
+        }
+        @Override public void onComplete() {}
+    }
+
+    private static class RedstoneLinkGhostHandler implements IGhostIngredientHandler<RedstoneLinkConfigScreen> {
+        @Override
+        public <I> List<Target<I>> getTargetsTyped(RedstoneLinkConfigScreen screen, ITypedIngredient<I> typed, boolean start) {
+            var stack = typed.getIngredient(VanillaTypes.ITEM_STACK);
+            if (stack.isEmpty()) return List.of();
+            ItemStack item = stack.get();
+            List<Target<I>> targets = new ArrayList<>(10);
+            // Frequency slots
+            targets.add(new Target<>() {
+                @Override public Rect2i getArea() { return screen.slot1Bounds; }
+                @Override public void accept(I ing) { screen.updateFrequencySlot(0, item); }
+            });
+            targets.add(new Target<>() {
+                @Override public Rect2i getArea() { return screen.slot2Bounds; }
+                @Override public void accept(I ing) { screen.updateFrequencySlot(1, item); }
+            });
+            // Preset slots
+            if (screen.presetPanel != null) {
+                for (int row = 0; row < 4; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        final int r = row;
+                        final int c = col;
+                        Rect2i bounds = screen.presetPanel.getSlotBounds(row, col);
+                        if (bounds != null) {
+                            targets.add(new Target<>() {
+                                @Override public Rect2i getArea() { return bounds; }
+                                @Override public void accept(I ing) {
+                                    screen.presetPanel.getPresetData().setStack(r, c, item);
+                                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                        new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(r, c, item));
+                                }
+                            });
+                        }
+                    }
+                }
+            }
             return targets;
         }
         @Override public void onComplete() {}

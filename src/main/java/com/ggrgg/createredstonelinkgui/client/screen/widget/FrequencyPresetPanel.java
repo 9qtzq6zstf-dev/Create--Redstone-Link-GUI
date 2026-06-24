@@ -297,8 +297,25 @@ public class FrequencyPresetPanel {
         return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
     }
 
+    // ==================== 获取槽位边界 ====================
+    /**
+     * Get the screen-space bounds for a specific preset slot.
+     * @param row 0-3
+     * @param col 0-1
+     */
+    public Rect2i getSlotBounds(int row, int col) {
+        int index = row * 2 + col;
+        if (index < 0 || index >= slotBounds.size()) return null;
+        return slotBounds.get(index);
+    }
+
     // ==================== 获取面板边界（用于JEI） ====================
     public Rect2i getBounds() {
         return new Rect2i(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
     }
+
+    public int getPanelX() { return panelX; }
+    public int getPanelY() { return panelY; }
+    public FrequencyPresetData getPresetData() { return presetData; }
+    public BlockPos getLinkPos() { return linkPos; }
 }

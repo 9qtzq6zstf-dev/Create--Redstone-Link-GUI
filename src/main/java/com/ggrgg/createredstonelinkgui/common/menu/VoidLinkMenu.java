@@ -125,8 +125,42 @@ public class VoidLinkMenu extends AbstractContainerMenu {
                     new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(this.pos, targetStack, slotId));
             return;
         }
-        // Block normal clicks on preset slots
+        // Preset slots (2-9) - same interactions as frequency slots
         if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
+            FrequencyPresetData presetData = FrequencyPresetData.get(player);
+            int presetIndex = (slotId - PRESET_SLOT_START) / PRESET_SLOTS_PER_ROW;
+            int slotIndex = (slotId - PRESET_SLOT_START) % PRESET_SLOTS_PER_ROW;
+            
+            // Right-click or Q-throw: clear
+            if (button == 1 || clickType == ClickType.THROW) {
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
+                }
+                this.getSlot(slotId).set(ItemStack.EMPTY);
+                return;
+            }
+            
+            // Left-click
+            ItemStack carried = getCarried();
+            if (!carried.isEmpty()) {
+                ItemStack placed = carried.copy();
+                placed.setCount(1);
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, placed);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, placed));
+                }
+                this.getSlot(slotId).set(placed);
+            } else {
+                if (player.level().isClientSide()) {
+                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
+                }
+                this.getSlot(slotId).set(ItemStack.EMPTY);
+            }
             return;
         }
         super.clicked(slotId, button, clickType, player);

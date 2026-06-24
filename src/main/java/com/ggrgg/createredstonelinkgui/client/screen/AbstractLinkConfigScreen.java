@@ -69,7 +69,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     public Rect2i blockPreviewBounds;
 
     // ==================== 预设面板 ====================
-    private FrequencyPresetPanel presetPanel;
+    public FrequencyPresetPanel presetPanel;
     public Rect2i presetPanelBounds;
 
     // ==================== 构造函数 ====================
@@ -201,7 +201,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     // ==================== 输入处理 ====================
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Check preset panel first
+        // Check preset panel copy/paste buttons first
         if (presetPanel != null && presetPanel.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
@@ -217,6 +217,24 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
                 // Consume middle-click even for non-symbol items to
                 // prevent it from falling through to menu.clicked() (button 2 → left-click behavior)
                 return true;
+            }
+            // Check preset slots for middle-click symbol picker
+            if (presetPanel != null) {
+                for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+                    for (int col = 0; col < 2; col++) {
+                        Rect2i bounds = presetPanel.getSlotBounds(row, col);
+                        if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
+                            ItemStack current = presetPanel.getPresetData().getStack(row, col);
+                            if (isFrequencySymbol(current)) {
+                                // Open symbol picker for preset slot — use slot index 8+row*2+col
+                                // The server handler will distinguish between link slots and preset slots
+                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(), 8 + row * 2 + col));
+                                return true;
+                            }
+                            return true;
+                        }
+                    }
+                }
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
