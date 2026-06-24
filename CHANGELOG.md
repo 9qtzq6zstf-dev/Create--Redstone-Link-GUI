@@ -1,5 +1,9 @@
 ## Changelog
 
+# 1.21.1-1.9.0
+
+- Add copy & paste function
+
 # 1.21.1-1.8.3
 
 - Compat for Frequency Create by registering that mod's items in JEI and copying its menu
