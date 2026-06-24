@@ -42,7 +42,7 @@ public class FrequencyPresetPanel {
     // ==================== 按钮坐标（相对于面板左上角） ====================
     private static final int COPY_BTN_X = 39;
     private static final int PASTE_BTN_X = 51;
-    private static final int BTN_SIZE = 10;
+    private static final int BTN_SIZE = 12;
 
     // ==================== 纹理UV坐标（当useTexture=true时使用） ====================
     // 面板背景区域 (UV)
@@ -63,18 +63,11 @@ public class FrequencyPresetPanel {
     private static final int PASTE_BTN_HOVER_V = 112;
 
     // ==================== 纹理检测 ====================
-    private static Boolean textureAvailable = null;
+    private static Boolean textureMissing = null;
 
     private static boolean isTextureAvailable() {
-        if (textureAvailable == null) {
-            try {
-                Minecraft.getInstance().getTextureManager().getTexture(PANEL_TEXTURE);
-                textureAvailable = true;
-            } catch (Exception e) {
-                textureAvailable = false;
-            }
-        }
-        return textureAvailable;
+        // Always use fallback fill() rendering for now since no texture file exists
+        return false;
     }
 
     // ==================== 实例字段 ====================
@@ -283,12 +276,15 @@ public class FrequencyPresetPanel {
     }
 
     private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered, boolean bright) {
-        // Brighter colors so buttons are clearly visible
-        int bgColor = hovered ? 0xFF4488FF : (bright ? 0xFF3366CC : 0xFF444444);
-        int borderColor = hovered ? 0xFFAACCFF : (bright ? 0xFF6699FF : 0xFF666666);
-        int textColor = hovered ? 0xFFFFFFFF : (bright ? 0xFFFFEE88 : 0xFFCCCCCC);
+        // Very bright colors for clear visibility
+        int bgColor = hovered ? 0xFF66AAFF : 0xFF4488EE;
+        int borderColor = hovered ? 0xFFCCEEFF : 0xFFAACCFF;
+        int textColor = 0xFFFFFFFF; // White text always
         graphics.fill(x - 1, y - 1, x + BTN_SIZE + 1, y + BTN_SIZE + 1, borderColor);
         graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, bgColor);
+        // Draw a small underline to distinguish C from P
+        graphics.fill(x, y + BTN_SIZE - 2, x + BTN_SIZE, y + BTN_SIZE - 1,
+            label.equals("C") ? 0xFF00FF00 : 0xFF00AAFF);
         Font font = Minecraft.getInstance().font;
         graphics.drawString(font, label, x + 2, y + 1, textColor, false);
     }

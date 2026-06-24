@@ -133,7 +133,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
         // === 预设面板（浮动在左侧外部） ===
-        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 20;
+        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 40;
         int panelY = contentTop + 2;
         FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
         this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData);
@@ -201,9 +201,51 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     // ==================== 输入处理 ====================
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Check preset panel copy/paste buttons first
-        if (presetPanel != null && presetPanel.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        // Check if clicking on a preset slot area first
+        if (presetPanel != null) {
+            FrequencyPresetData presetData = presetPanel.getPresetData();
+            for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+                for (int col = 0; col < 2; col++) {
+                    Rect2i bounds = presetPanel.getSlotBounds(row, col);
+                    if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
+                        if (button == 2) {
+                            // Middle-click: open symbol picker for frequency symbols
+                            ItemStack current = presetData.getStack(row, col);
+                            if (isFrequencySymbol(current)) {
+                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(), 8 + row * 2 + col));
+                                return true;
+                            }
+                            return true; // consume
+                        } else if (button == 0) {
+                            // Left-click: place carried item into preset slot
+                            ItemStack carried = this.menu.getCarried();
+                            if (!carried.isEmpty()) {
+                                ItemStack copy = carried.copy();
+                                copy.setCount(1);
+                                presetData.setStack(row, col, copy);
+                                if (this.minecraft.level != null && this.minecraft.level.isClientSide()) {
+                                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                        new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(row, col, copy));
+                                }
+                            }
+                            return true;
+                        } else if (button == 1) {
+                            // Right-click: clear the preset slot
+                            presetData.setStack(row, col, ItemStack.EMPTY);
+                            if (this.minecraft.level != null && this.minecraft.level.isClientSide()) {
+                                net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                    new com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload(row, col, ItemStack.EMPTY));
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // Check preset panel copy/paste buttons (only left click)
+            if (button == 0 && presetPanel.mouseClicked(mouseX, mouseY, button)) {
+                return true;
+            }
         }
 
         if (button == 2) {
@@ -217,24 +259,6 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
                 // Consume middle-click even for non-symbol items to
                 // prevent it from falling through to menu.clicked() (button 2 → left-click behavior)
                 return true;
-            }
-            // Check preset slots for middle-click symbol picker
-            if (presetPanel != null) {
-                for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
-                    for (int col = 0; col < 2; col++) {
-                        Rect2i bounds = presetPanel.getSlotBounds(row, col);
-                        if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
-                            ItemStack current = presetPanel.getPresetData().getStack(row, col);
-                            if (isFrequencySymbol(current)) {
-                                // Open symbol picker for preset slot — use slot index 8+row*2+col
-                                // The server handler will distinguish between link slots and preset slots
-                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(), 8 + row * 2 + col));
-                                return true;
-                            }
-                            return true;
-                        }
-                    }
-                }
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);
