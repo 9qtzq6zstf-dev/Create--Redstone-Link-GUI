@@ -42,9 +42,6 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     protected static final int CONTENT_TOP_OFFSET = 6;
     protected static final int BACKPACK_TOP_OFFSET = 94;
 
-    /** Extra width allocated for the preset panel on the left side. */
-    private static final int PRESET_PANEL_WIDTH = FrequencyPresetPanel.PANEL_WIDTH + 15;
-
     // ==================== 覆盖层纹理偏移 ====================
     protected static final int UV_OFFSET_X = 16;
     protected static final int UV_OFFSET_Y = 160;
@@ -73,11 +70,12 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
 
     // ==================== 预设面板 ====================
     private FrequencyPresetPanel presetPanel;
+    public Rect2i presetPanelBounds;
 
     // ==================== 构造函数 ====================
     public AbstractLinkConfigScreen(T menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
-        this.imageWidth = 256 + PRESET_PANEL_WIDTH;
+        this.imageWidth = 256;
         this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
         this.inventoryLabelY = this.imageHeight - 94;
     }
@@ -116,33 +114,31 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         super.init();
 
         int leftPos = (this.width - this.imageWidth) / 2;
-        int contentLeft = leftPos + PRESET_PANEL_WIDTH + (this.imageWidth - PRESET_PANEL_WIDTH - OVERLAY_WIDTH) / 2 + 3;
+        int contentLeft = leftPos + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
-        // 槽位边界
+        // 槽位边界 (original positions - unchanged)
         this.slot1Bounds = new Rect2i(
-            leftPos + PRESET_PANEL_WIDTH + 101,
+            leftPos + 101,
             contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
         this.slot2Bounds = new Rect2i(
-            leftPos + PRESET_PANEL_WIDTH + 137,
+            leftPos + 137,
             contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
-        this.blockPreviewBounds = new Rect2i(
-            leftPos + PRESET_PANEL_WIDTH + 215,
-            contentTop + 30,
-            64, 64
-        );
+        this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
-        // === 预设面板 ===
-        int panelX = leftPos + 5;
-        int panelY = contentTop + 5;
+        // === 预设面板（浮动在左侧外部） ===
+        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH - 10;
+        int panelY = contentTop + 2;
         FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
         this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData);
+        this.presetPanelBounds = new Rect2i(panelX, panelY,
+            FrequencyPresetPanel.PANEL_WIDTH, FrequencyPresetPanel.PANEL_HEIGHT);
 
         // === Move 按钮 ===
         ImageButton moveButton = new ImageButton(
@@ -226,13 +222,23 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    // ==================== 跳过预设槽位渲染 ====================
+    @Override
+    protected void renderSlot(GuiGraphics graphics, Slot slot) {
+        // Skip preset slots (slots 2-9) — the preset panel handles their rendering
+        if (slot.getContainerSlot() >= 2 && slot.getContainerSlot() < 10) {
+            return;
+        }
+        super.renderSlot(graphics, slot);
+    }
+
     // ==================== 渲染 ====================
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
 
-        // ========== 预设面板渲染 ==========
+        // ========== 预设面板渲染（浮动在左侧外部） ==========
         if (presetPanel != null) {
             presetPanel.render(graphics, mouseX, mouseY, partialTick);
         }
@@ -279,7 +285,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        int contentLeft = x + PRESET_PANEL_WIDTH + (this.imageWidth - PRESET_PANEL_WIDTH - OVERLAY_WIDTH) / 2 + 3;
+        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = y + CONTENT_TOP_OFFSET;
 
         // 绘制覆盖层

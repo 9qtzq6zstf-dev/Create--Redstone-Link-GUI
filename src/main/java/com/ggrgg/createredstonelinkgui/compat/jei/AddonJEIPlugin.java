@@ -62,17 +62,19 @@ public class AddonJEIPlugin implements IModPlugin {
         registration.addGenericGuiContainerHandler(RedstoneLinkConfigScreen.class, new IGuiContainerHandler<RedstoneLinkConfigScreen>() {
             @Override
             public List<Rect2i> getGuiExtraAreas(RedstoneLinkConfigScreen screen) {
-                return screen.blockPreviewBounds != null
-                    ? List.of(screen.blockPreviewBounds)
-                    : List.of();
+                List<Rect2i> areas = new ArrayList<>();
+                if (screen.blockPreviewBounds != null) areas.add(screen.blockPreviewBounds);
+                if (screen.presetPanelBounds != null) areas.add(screen.presetPanelBounds);
+                return areas;
             }
         });
         registration.addGenericGuiContainerHandler(VoidLinkConfigScreen.class, new IGuiContainerHandler<VoidLinkConfigScreen>() {
             @Override
             public List<Rect2i> getGuiExtraAreas(VoidLinkConfigScreen screen) {
-                return screen.blockPreviewBounds != null
-                    ? List.of(screen.blockPreviewBounds)
-                    : List.of();
+                List<Rect2i> areas = new ArrayList<>();
+                if (screen.blockPreviewBounds != null) areas.add(screen.blockPreviewBounds);
+                if (screen.presetPanelBounds != null) areas.add(screen.presetPanelBounds);
+                return areas;
             }
         });
     }

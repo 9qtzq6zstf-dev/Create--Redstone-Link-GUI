@@ -34,15 +34,13 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public static final int PRESET_SLOTS_PER_ROW = 2;
     public static final int PRESET_ROWS = 4;
 
-    // These positions must match the rendering positions in FrequencyPresetPanel
-    // Relative to the menu's slot grid (leftPos + x, contentTop + y)
-    // Positions relative to leftPos - must match FrequencyPresetPanel rendering
-    // Panel is at leftPos+5, slots at SLOT_X=3 -> leftPos+8 for col 0, leftPos+26 for col 1
-    // Panel at contentTop+5, slots at panelY+16, contentTop = topPos+6
-    // Slot Y = topPos + 6 + 5 + 16 + row*22 = topPos + 27 + row*22
-    // Slot X = leftPos + 5 + 3 + col*18 = leftPos + 8 + col*18
-    public static final int PRESET_SLOT_X_START = 8;
-    public static final int PRESET_SLOT_Y_START = 27;
+    // Slots are positioned relative to leftPos/topPos.
+    // Panel floats at panelX = leftPos - PANEL_WIDTH - 10, panelY = contentTop + 2.
+    // Slot absolute = panelX + 3 + col*18, panelY + 16 + row*22
+    // Relative to leftPos: X = (leftPos - 75) + 3 + col*18 - leftPos = -72 + col*18
+    // Relative to topPos: Y = (topPos + 6) + 2 + 16 + row*22 - topPos = 24 + row*22
+    public static final int PRESET_SLOT_X_START = -72;
+    public static final int PRESET_SLOT_Y_START = 24;
     public static final int PRESET_SLOT_SPACING_X = 18;
     public static final int PRESET_SLOT_SPACING_Y = 22;
 

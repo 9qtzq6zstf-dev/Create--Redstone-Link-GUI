@@ -1,7 +1,7 @@
 package com.ggrgg.createredstonelinkgui.compat.emi;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
 import com.ggrgg.createredstonelinkgui.client.screen.VoidLinkConfigScreen;
@@ -52,22 +52,12 @@ public class AddonEMIPlugin implements EmiPlugin {
         registry.addDragDropHandler(VoidLinkConfigScreen.class, handler);
 
         registry.addExclusionArea(RedstoneLinkConfigScreen.class, (screen, consumer) -> {
-            if (screen.blockPreviewBounds != null)
-                consumer.accept(new Bounds(
-                    screen.blockPreviewBounds.getX(),
-                    screen.blockPreviewBounds.getY(),
-                    screen.blockPreviewBounds.getWidth(),
-                    screen.blockPreviewBounds.getHeight()
-                ));
+            addArea(screen.blockPreviewBounds, consumer);
+            addArea(screen.presetPanelBounds, consumer);
         });
         registry.addExclusionArea(VoidLinkConfigScreen.class, (screen, consumer) -> {
-            if (screen.blockPreviewBounds != null)
-                consumer.accept(new Bounds(
-                    screen.blockPreviewBounds.getX(),
-                    screen.blockPreviewBounds.getY(),
-                    screen.blockPreviewBounds.getWidth(),
-                    screen.blockPreviewBounds.getHeight()
-                ));
+            addArea(screen.blockPreviewBounds, consumer);
+            addArea(screen.presetPanelBounds, consumer);
         });
 
         // Unhide frequency mod symbol items, ordered by the frequency mod's list
@@ -78,6 +68,12 @@ public class AddonEMIPlugin implements EmiPlugin {
             if (item != null) {
                 registry.addEmiStack(EmiStack.of(new ItemStack(item)));
             }
+        }
+    }
+
+    private static void addArea(net.minecraft.client.renderer.Rect2i rect, Consumer<Bounds> consumer) {
+        if (rect != null) {
+            consumer.accept(new Bounds(rect.getX(), rect.getY(), rect.getWidth(), rect.getHeight()));
         }
     }
 }

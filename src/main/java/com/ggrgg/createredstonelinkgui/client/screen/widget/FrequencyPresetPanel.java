@@ -14,40 +14,70 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * Panel displayed on the left side of the link config screen.
+ * Panel displayed to the left of the link config screen.
  * Shows 4 rows of preset frequencies with copy/paste buttons.
+ * Supports a custom texture (frequency_preset_panel.png) with fill() fallback.
  */
 public class FrequencyPresetPanel {
 
-    // Panel dimensions
+    // ==================== 面板尺寸 ====================
     public static final int PANEL_WIDTH = 65;
     public static final int PANEL_HEIGHT = 110;
-    public static final int PANEL_X_OFFSET = 5;
-    public static final int PANEL_Y_OFFSET = 5;
 
-    // Slot positions relative to panel top-left
-    public static final int SLOT_X = 3;
-    public static final int SLOT_Y_START = 16;
-    public static final int SLOT_SPACING_Y = 22;
-    public static final int SLOT_SIZE = 16;
+    // ==================== 纹理资源 ====================
+    private static final ResourceLocation PANEL_TEXTURE =
+        ResourceLocation.parse("createredstonelinkgui:textures/gui/frequency_preset_panel.png");
 
-    // Button positions relative to panel top-left
-    public static final int COPY_BTN_X = 39;
-    public static final int PASTE_BTN_X = 51;
-    public static final int BTN_SIZE = 10;
+    // ==================== 假脱机坐标（相对于面板左上角） ====================
+    private static final int SLOT_X = 3;
+    private static final int SLOT_Y_START = 16;
+    private static final int SLOT_SPACING_Y = 22;
+    private static final int SLOT_SIZE = 16;
 
-    // Texture UV for copy/paste icons (reuse from overlay texture)
-    // Copy = arrow pointing right, Paste = arrow pointing in
-    // We'll use simple text characters for now since we don't have custom textures
-    private static final int SLOT_UV_X = 77;
-    private static final int SLOT_UV_Y = 188;
-    private static final int SLOT_BG_UV_X = 112;
-    private static final int SLOT_BG_UV_Y = 172;
+    // ==================== 按钮坐标（相对于面板左上角） ====================
+    private static final int COPY_BTN_X = 39;
+    private static final int PASTE_BTN_X = 51;
+    private static final int BTN_SIZE = 10;
 
+    // ==================== 纹理UV坐标（当useTexture=true时使用） ====================
+    // 面板背景区域 (UV)
+    private static final int PANEL_U = 0;
+    private static final int PANEL_V = 0;
+    // 槽位背景 (16×16)
+    private static final int SLOT_UV_U = 0;
+    private static final int SLOT_UV_V = 112;
+    // 复制按钮 (默认 + 悬浮)
+    private static final int COPY_BTN_U = 20;
+    private static final int COPY_BTN_V = 112;
+    private static final int COPY_BTN_HOVER_U = 36;
+    private static final int COPY_BTN_HOVER_V = 112;
+    // 粘贴按钮 (默认 + 悬浮)
+    private static final int PASTE_BTN_U = 52;
+    private static final int PASTE_BTN_V = 112;
+    private static final int PASTE_BTN_HOVER_U = 68;
+    private static final int PASTE_BTN_HOVER_V = 112;
+
+    // ==================== 纹理检测 ====================
+    private static Boolean textureAvailable = null;
+
+    private static boolean isTextureAvailable() {
+        if (textureAvailable == null) {
+            try {
+                Minecraft.getInstance().getTextureManager().getTexture(PANEL_TEXTURE);
+                textureAvailable = true;
+            } catch (Exception e) {
+                textureAvailable = false;
+            }
+        }
+        return textureAvailable;
+    }
+
+    // ==================== 实例字段 ====================
     private final FrequencyPresetData presetData;
     private final BlockPos linkPos;
     private final int panelX;
@@ -84,28 +114,79 @@ public class FrequencyPresetPanel {
         }
     }
 
-    /**
-     * Render the preset panel.
-     */
+    // ==================== 渲染 ====================
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        if (isTextureAvailable()) {
+            renderWithTexture(graphics, mouseX, mouseY);
+        } else {
+            renderFallback(graphics, mouseX, mouseY);
+        }
+    }
+
+    // ==================== 纹理渲染路径 ====================
+    private void renderWithTexture(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
 
-        // Draw panel background
-        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xCC333333);
+        // 面板背景
+        graphics.blit(PANEL_TEXTURE, panelX, panelY, PANEL_U, PANEL_V, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
 
-        // Draw title
+        // 标题
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
 
-        // Draw each row
+        // 每行
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + SLOT_Y_START + row * SLOT_SPACING_Y;
 
-            // Draw row number label
+            // 行号
             graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + 4, 0xFF888888, false);
 
-            // Draw slot backgrounds and items
+            // 槽位
+            for (int col = 0; col < 2; col++) {
+                int slotX = panelX + SLOT_X + col * 18;
+                graphics.blit(PANEL_TEXTURE, slotX, rowY, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
+                ItemStack stack = presetData.getStack(row, col);
+                if (!stack.isEmpty()) {
+                    graphics.renderItem(stack, slotX, rowY);
+                }
+            }
+
+            // 复制按钮
+            int copyBtnX = panelX + COPY_BTN_X;
+            boolean copyHover = isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
+            graphics.blit(PANEL_TEXTURE, copyBtnX, rowY + 3,
+                copyHover ? COPY_BTN_HOVER_U : COPY_BTN_U,
+                copyHover ? COPY_BTN_HOVER_V : COPY_BTN_V,
+                BTN_SIZE, BTN_SIZE, 256, 256);
+
+            // 粘贴按钮
+            int pasteBtnX = panelX + PASTE_BTN_X;
+            boolean pasteHover = isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
+            graphics.blit(PANEL_TEXTURE, pasteBtnX, rowY + 3,
+                pasteHover ? PASTE_BTN_HOVER_U : PASTE_BTN_U,
+                pasteHover ? PASTE_BTN_HOVER_V : PASTE_BTN_V,
+                BTN_SIZE, BTN_SIZE, 256, 256);
+        }
+    }
+
+    // ==================== 回退渲染路径 (fill) ====================
+    private void renderFallback(GuiGraphics graphics, int mouseX, int mouseY) {
+        Font font = Minecraft.getInstance().font;
+
+        // 面板背景
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xCC333333);
+
+        // 标题
+        Component title = Component.translatable("gui.createredstonelinkgui.presets");
+        int titleWidth = font.width(title);
+        graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
+
+        for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+            int rowY = panelY + SLOT_Y_START + row * SLOT_SPACING_Y;
+
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + 4, 0xFF888888, false);
+
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * 18;
                 drawSlotBackground(graphics, slotX, rowY);
@@ -115,23 +196,18 @@ public class FrequencyPresetPanel {
                 }
             }
 
-            // Draw copy button
             int copyBtnX = panelX + COPY_BTN_X;
             drawButton(graphics, copyBtnX, rowY + 3, "C",
                 isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE));
 
-            // Draw paste button
             int pasteBtnX = panelX + PASTE_BTN_X;
             drawButton(graphics, pasteBtnX, rowY + 3, "P",
                 isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE));
         }
     }
 
-    /**
-     * Render tooltips for hovered elements.
-     */
+    // ==================== 工具提示 ====================
     public void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
-        // Check slot tooltips
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             for (int col = 0; col < 2; col++) {
                 Rect2i bounds = slotBounds.get(row * 2 + col);
@@ -150,7 +226,6 @@ public class FrequencyPresetPanel {
             }
         }
 
-        // Check copy button tooltips
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             Rect2i bounds = copyBtnBounds.get(row);
             if (bounds.contains(mouseX, mouseY)) {
@@ -162,7 +237,6 @@ public class FrequencyPresetPanel {
             }
         }
 
-        // Check paste button tooltips
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             Rect2i bounds = pasteBtnBounds.get(row);
             if (bounds.contains(mouseX, mouseY)) {
@@ -175,22 +249,18 @@ public class FrequencyPresetPanel {
         }
     }
 
-    /**
-     * Handle mouse clicks. Returns true if the click was handled.
-     */
+    // ==================== 鼠标点击 ====================
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0) return false; // Only left clicks
+        if (button != 0) return false;
 
         int mx = (int) mouseX;
         int my = (int) mouseY;
 
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
-            // Copy button
             if (copyBtnBounds.get(row).contains(mx, my)) {
                 PacketDistributor.sendToServer(new CopyToPresetPayload(linkPos, row));
                 return true;
             }
-            // Paste button
             if (pasteBtnBounds.get(row).contains(mx, my)) {
                 PacketDistributor.sendToServer(new PasteFromPresetPayload(linkPos, row));
                 return true;
@@ -200,8 +270,8 @@ public class FrequencyPresetPanel {
         return false;
     }
 
+    // ==================== 辅助绘制方法 ====================
     private void drawSlotBackground(GuiGraphics graphics, int x, int y) {
-        // Draw a simple dark square with border (mimicking a slot)
         graphics.fill(x - 1, y - 1, x + SLOT_SIZE + 1, y + SLOT_SIZE + 1, 0xFF555555);
         graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0xFF333333);
     }
@@ -219,20 +289,8 @@ public class FrequencyPresetPanel {
         return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
     }
 
-    /**
-     * Get the menu slot x position for a preset slot.
-     * This should match what the menu uses.
-     */
-    public static int getMenuSlotX(int col) {
-        // Relative to contentLeft position
-        return 1; // Will be adjusted
-    }
-
-    /**
-     * Get the menu slot y position for a preset slot (relative to contentTop).
-     */
-    public static int getMenuSlotY(int row) {
-        // Relative to contentTop position
-        return SLOT_Y_START + row * SLOT_SPACING_Y;
+    // ==================== 获取面板边界（用于JEI） ====================
+    public Rect2i getBounds() {
+        return new Rect2i(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
     }
 }
