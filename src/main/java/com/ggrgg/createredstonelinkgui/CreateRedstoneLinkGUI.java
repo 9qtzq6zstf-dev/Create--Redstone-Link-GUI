@@ -19,6 +19,10 @@ import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPaylo
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkModeTogglePayload;
 import com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkMovePayload;
 import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
+import com.ggrgg.createredstonelinkgui.common.network.CopyToPresetPayload;
+import com.ggrgg.createredstonelinkgui.common.network.PasteFromPresetPayload;
+import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.client.screen.RedstoneLinkConfigScreen;
@@ -39,6 +43,9 @@ public class CreateRedstoneLinkGUI {
     public CreateRedstoneLinkGUI(IEventBus modEventBus, ModContainer modContainer) {
         // Read the mod version from the injected ModContainer (sourced from gradle.properties via neoforge.mods.toml)
         this.networkProtocol = modContainer.getModInfo().getVersion().toString();
+        
+        // Register attachment types
+        FrequencyPresetData.ATTACHMENT_TYPES.register(modEventBus);
         
         // Register core network configurations
         modEventBus.addListener(this::registerPackets);
@@ -83,6 +90,22 @@ public class CreateRedstoneLinkGUI {
                 OpenLinkMenuPayload.TYPE,
                 OpenLinkMenuPayload.CODEC,
                 OpenLinkMenuPayload::handleServer
+        );
+        // Preset system packets
+        registrar.playToServer(
+                CopyToPresetPayload.TYPE,
+                CopyToPresetPayload.CODEC,
+                CopyToPresetPayload::handleServer
+        );
+        registrar.playToServer(
+                PasteFromPresetPayload.TYPE,
+                PasteFromPresetPayload.CODEC,
+                PasteFromPresetPayload::handleServer
+        );
+        registrar.playToServer(
+                PresetSlotUpdatePayload.TYPE,
+                PresetSlotUpdatePayload.CODEC,
+                PresetSlotUpdatePayload::handleServer
         );
     }
 

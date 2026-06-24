@@ -3,6 +3,8 @@ package com.ggrgg.createredstonelinkgui.common.menu;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -27,10 +29,28 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
         () -> IMenuTypeExtension.create((windowId, inv, data) -> new RedstoneLinkMenu(windowId, inv, data.readBlockPos()))
     );
 
+    // Preset slot IDs (slots 2-9 for 4 rows × 2 columns)
+    public static final int PRESET_SLOT_START = 2;
+    public static final int PRESET_SLOTS_PER_ROW = 2;
+    public static final int PRESET_ROWS = 4;
+
+    // These positions must match the rendering positions in FrequencyPresetPanel
+    // Relative to the menu's slot grid (leftPos + x, contentTop + y)
+    // Positions relative to leftPos - must match FrequencyPresetPanel rendering
+    // Panel is at leftPos+5, slots at SLOT_X=3 -> leftPos+8 for col 0, leftPos+26 for col 1
+    // Panel at contentTop+5, slots at panelY+16, contentTop = topPos+6
+    // Slot Y = topPos + 6 + 5 + 16 + row*22 = topPos + 27 + row*22
+    // Slot X = leftPos + 5 + 3 + col*18 = leftPos + 8 + col*18
+    public static final int PRESET_SLOT_X_START = 8;
+    public static final int PRESET_SLOT_Y_START = 27;
+    public static final int PRESET_SLOT_SPACING_X = 18;
+    public static final int PRESET_SLOT_SPACING_Y = 22;
+
     private final BlockPos pos;
     private LinkBehaviour behaviour;
     private boolean isRedstoneLink;
     private boolean receiverMode;
+    private final Player player;
 
     // Reflection caches
     private static Method cachedSetFrequencyMethod;
@@ -75,6 +95,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public RedstoneLinkMenu(int containerId, Inventory playerInventory, BlockPos pos) {
         super(TYPE.get(), containerId);
         this.pos = pos;
+        this.player = playerInventory.player;
         
         var level = playerInventory.player.level();
         var state = level.getBlockState(pos);
@@ -86,9 +107,32 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             this.behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
         }
 
-        // Add custom Ghost Recipe Slots
+        // Add custom Ghost Recipe Slots for frequency slots
         this.addSlot(new GhostRecipeSlot(0, 101, 34, () -> getFrequencyItem(0), this::setFrequencyItem));
         this.addSlot(new GhostRecipeSlot(1, 137, 34, () -> getFrequencyItem(1), this::setFrequencyItem));
+
+        // Add Ghost Recipe Slots for preset rows (slots 2-9)
+        // These enable JEI ghost-drag and display the saved preset items
+        FrequencyPresetData presetData = FrequencyPresetData.get(playerInventory.player);
+        for (int row = 0; row < PRESET_ROWS; row++) {
+            for (int col = 0; col < PRESET_SLOTS_PER_ROW; col++) {
+                final int r = row;
+                final int c = col;
+                int slotId = PRESET_SLOT_START + row * PRESET_SLOTS_PER_ROW + col;
+                int x = PRESET_SLOT_X_START + col * PRESET_SLOT_SPACING_X;
+                int y = PRESET_SLOT_Y_START + row * PRESET_SLOT_SPACING_Y;
+                this.addSlot(new GhostRecipeSlot(slotId, x, y,
+                    () -> presetData.getStack(r, c),
+                    (id, stack) -> {
+                        if (playerInventory.player.level().isClientSide()) {
+                            presetData.setStack(r, c, stack);
+                            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                new PresetSlotUpdatePayload(r, c, stack));
+                        }
+                    }
+                ));
+            }
+        }
 
         // Player Main Inventory Layout (Rows 1-3)
         for (int row = 0; row < 3; ++row) {
@@ -105,6 +149,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        // Frequency slots (0, 1) - existing behavior
         if (slotId >= 0 && slotId < 2) {
             var slot = this.getSlot(slotId);
             ItemStack targetStack = ItemStack.EMPTY;
@@ -122,6 +167,11 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
                     new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(this.pos, targetStack, slotId)
                 );
             }
+            return;
+        }
+        // Preset slots (2-9) - JEI ghost recipe system calls slot.set() directly,
+        // bypassing clicked(). For normal clicks, just block item pickup.
+        if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
             return;
         }
         super.clicked(slotId, button, clickType, player);
@@ -193,4 +243,11 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
 
     @Override public boolean stillValid(Player player) { return true; }
     @Override public ItemStack quickMoveStack(Player player, int index) { return ItemStack.EMPTY; }
+
+    /**
+     * Get the preset data for this player (used by the GUI panel).
+     */
+    public FrequencyPresetData getPresetData() {
+        return FrequencyPresetData.get(this.player);
+    }
 }

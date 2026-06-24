@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
+import com.ggrgg.createredstonelinkgui.client.screen.widget.FrequencyPresetPanel;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerScreen;
 
 import net.minecraft.ChatFormatting;
@@ -40,6 +42,9 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     protected static final int CONTENT_TOP_OFFSET = 6;
     protected static final int BACKPACK_TOP_OFFSET = 94;
 
+    /** Extra width allocated for the preset panel on the left side. */
+    private static final int PRESET_PANEL_WIDTH = FrequencyPresetPanel.PANEL_WIDTH + 15;
+
     // ==================== 覆盖层纹理偏移 ====================
     protected static final int UV_OFFSET_X = 16;
     protected static final int UV_OFFSET_Y = 160;
@@ -66,10 +71,13 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     public Rect2i slot2Bounds;
     public Rect2i blockPreviewBounds;
 
+    // ==================== 预设面板 ====================
+    private FrequencyPresetPanel presetPanel;
+
     // ==================== 构造函数 ====================
     public AbstractLinkConfigScreen(T menu, Inventory playerInv, Component title) {
         super(menu, playerInv, title);
-        this.imageWidth = 256;
+        this.imageWidth = 256 + PRESET_PANEL_WIDTH;
         this.imageHeight = CONTENT_TOP_OFFSET + OVERLAY_HEIGHT + BACKPACK_HEIGHT + 6;
         this.inventoryLabelY = this.imageHeight - 94;
     }
@@ -108,23 +116,33 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         super.init();
 
         int leftPos = (this.width - this.imageWidth) / 2;
-        int contentLeft = leftPos + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
+        int contentLeft = leftPos + PRESET_PANEL_WIDTH + (this.imageWidth - PRESET_PANEL_WIDTH - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = (this.height - this.imageHeight) / 2 + CONTENT_TOP_OFFSET;
 
         // 槽位边界
         this.slot1Bounds = new Rect2i(
-            leftPos + 101,
+            leftPos + PRESET_PANEL_WIDTH + 101,
             contentTop + (SLOT1_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
         this.slot2Bounds = new Rect2i(
-            leftPos + 137,
+            leftPos + PRESET_PANEL_WIDTH + 137,
             contentTop + (SLOT2_UV_Y - UV_OFFSET_Y),
             SLOT_SIZE,
             SLOT_SIZE
         );
-        this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
+        this.blockPreviewBounds = new Rect2i(
+            leftPos + PRESET_PANEL_WIDTH + 215,
+            contentTop + 30,
+            64, 64
+        );
+
+        // === 预设面板 ===
+        int panelX = leftPos + 5;
+        int panelY = contentTop + 5;
+        FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
+        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData);
 
         // === Move 按钮 ===
         ImageButton moveButton = new ImageButton(
@@ -187,6 +205,11 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     // ==================== 输入处理 ====================
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Check preset panel first
+        if (presetPanel != null && presetPanel.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+
         if (button == 2) {
             int slot = hitTestFrequencySlot(mouseX, mouseY);
             if (slot >= 0) {
@@ -208,6 +231,11 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
+
+        // ========== 预设面板渲染 ==========
+        if (presetPanel != null) {
+            presetPanel.render(graphics, mouseX, mouseY, partialTick);
+        }
 
         // ========== 频率槽位工具提示 ==========
         if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
@@ -236,6 +264,9 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
             }
             graphics.renderTooltip(this.minecraft.font, tooltipLines, java.util.Optional.empty(),
                     mouseX, mouseY + yOffset);
+        } else if (presetPanel != null) {
+            // Preset panel tooltips
+            presetPanel.renderTooltips(graphics, mouseX, mouseY);
         }
         // ===================================
 
@@ -248,7 +279,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         int x = (this.width - this.imageWidth) / 2;
         int y = (this.height - this.imageHeight) / 2;
 
-        int contentLeft = x + (this.imageWidth - OVERLAY_WIDTH) / 2 + 3;
+        int contentLeft = x + PRESET_PANEL_WIDTH + (this.imageWidth - PRESET_PANEL_WIDTH - OVERLAY_WIDTH) / 2 + 3;
         int contentTop = y + CONTENT_TOP_OFFSET;
 
         // 绘制覆盖层

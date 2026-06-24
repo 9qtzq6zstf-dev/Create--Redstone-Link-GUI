@@ -30,5 +30,9 @@
   "gui.createredstonelinkgui.frequency_second": "Frequency #2",
   "gui.createredstonelinkgui.own": "Left-click to own",
   "gui.createredstonelinkgui.forfeit": "Left-click to forfeit ownership",
-  "gui.createredstonelinkgui.middle_click_swap": "Middle click to open swap menu"
+  "gui.createredstonelinkgui.middle_click_swap": "Middle click to open swap menu",
+  "gui.createredstonelinkgui.presets": "Presets",
+  "gui.createredstonelinkgui.copy_to_preset": "Copy frequencies to preset %d",
+  "gui.createredstonelinkgui.paste_from_preset": "Paste frequencies from preset %d",
+  "gui.createredstonelinkgui.preset_slot_empty": "Preset %d slot %d is empty\nDrag an item here from JEI or set via copy/paste"
 }

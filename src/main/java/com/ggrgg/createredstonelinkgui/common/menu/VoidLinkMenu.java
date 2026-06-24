@@ -4,6 +4,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
+import com.ggrgg.createredstonelinkgui.common.network.PresetSlotUpdatePayload;
+import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,8 +26,18 @@ public class VoidLinkMenu extends AbstractContainerMenu {
         () -> IMenuTypeExtension.create((windowId, inv, data) -> new VoidLinkMenu(windowId, inv, data.readBlockPos()))
     );
 
+    // Same constants as RedstoneLinkMenu for preset slots
+    public static final int PRESET_SLOT_START = 2;
+    public static final int PRESET_SLOTS_PER_ROW = 2;
+    public static final int PRESET_ROWS = 4;
+    public static final int PRESET_SLOT_X_START = 8;
+    public static final int PRESET_SLOT_Y_START = 27;
+    public static final int PRESET_SLOT_SPACING_X = 18;
+    public static final int PRESET_SLOT_SPACING_Y = 22;
+
     private final BlockPos pos;
     private Object behaviour;
+    private final Player player;
 
     private static boolean reflectionInit = false;
     private static Method cachedSetFrequencyMethod;
@@ -58,6 +70,7 @@ public class VoidLinkMenu extends AbstractContainerMenu {
     public VoidLinkMenu(int containerId, Inventory playerInventory, BlockPos pos) {
         super(TYPE.get(), containerId);
         this.pos = pos;
+        this.player = playerInventory.player;
         
         var level = playerInventory.player.level();
         
@@ -65,6 +78,28 @@ public class VoidLinkMenu extends AbstractContainerMenu {
 
         this.addSlot(new GhostRecipeSlot(0, 101, 34, () -> getFrequencyItem(0), this::setFrequencyItem));
         this.addSlot(new GhostRecipeSlot(1, 137, 34, () -> getFrequencyItem(1), this::setFrequencyItem));
+
+        // Add Ghost Recipe Slots for preset rows (slots 2-9)
+        FrequencyPresetData presetData = FrequencyPresetData.get(playerInventory.player);
+        for (int row = 0; row < PRESET_ROWS; row++) {
+            for (int col = 0; col < PRESET_SLOTS_PER_ROW; col++) {
+                final int r = row;
+                final int c = col;
+                int slotId = PRESET_SLOT_START + row * PRESET_SLOTS_PER_ROW + col;
+                int x = PRESET_SLOT_X_START + col * PRESET_SLOT_SPACING_X;
+                int y = PRESET_SLOT_Y_START + row * PRESET_SLOT_SPACING_Y;
+                this.addSlot(new GhostRecipeSlot(slotId, x, y,
+                    () -> presetData.getStack(r, c),
+                    (id, stack) -> {
+                        if (playerInventory.player.level().isClientSide()) {
+                            presetData.setStack(r, c, stack);
+                            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                                new PresetSlotUpdatePayload(r, c, stack));
+                        }
+                    }
+                ));
+            }
+        }
 
         for (int row = 0; row < 3; ++row)
             for (int col = 0; col < 9; ++col)
@@ -88,6 +123,10 @@ public class VoidLinkMenu extends AbstractContainerMenu {
             if (player.level().isClientSide())
                 net.neoforged.neoforge.network.PacketDistributor.sendToServer(
                     new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(this.pos, targetStack, slotId));
+            return;
+        }
+        // Block normal clicks on preset slots
+        if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
             return;
         }
         super.clicked(slotId, button, clickType, player);
@@ -139,4 +178,11 @@ public class VoidLinkMenu extends AbstractContainerMenu {
 
     @Override public boolean stillValid(Player player) { return true; }
     @Override public ItemStack quickMoveStack(Player player, int index) { return ItemStack.EMPTY; }
+
+    /**
+     * Get the preset data for this player.
+     */
+    public FrequencyPresetData getPresetData() {
+        return FrequencyPresetData.get(this.player);
+    }
 }
