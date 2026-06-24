@@ -198,11 +198,13 @@ public class FrequencyPresetPanel {
 
             int copyBtnX = panelX + COPY_BTN_X;
             drawButton(graphics, copyBtnX, rowY + 3, "C",
-                isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE));
+                isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE),
+                true);
 
             int pasteBtnX = panelX + PASTE_BTN_X;
             drawButton(graphics, pasteBtnX, rowY + 3, "P",
-                isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE));
+                isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE),
+                true);
         }
     }
 
@@ -277,12 +279,18 @@ public class FrequencyPresetPanel {
     }
 
     private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered) {
-        int bgColor = hovered ? 0xFF5555CC : 0xFF444444;
-        int borderColor = hovered ? 0xFF8888FF : 0xFF666666;
+        drawButton(graphics, x, y, label, hovered, false);
+    }
+
+    private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered, boolean bright) {
+        // Brighter colors so buttons are clearly visible
+        int bgColor = hovered ? 0xFF4488FF : (bright ? 0xFF3366CC : 0xFF444444);
+        int borderColor = hovered ? 0xFFAACCFF : (bright ? 0xFF6699FF : 0xFF666666);
+        int textColor = hovered ? 0xFFFFFFFF : (bright ? 0xFFFFEE88 : 0xFFCCCCCC);
         graphics.fill(x - 1, y - 1, x + BTN_SIZE + 1, y + BTN_SIZE + 1, borderColor);
         graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, bgColor);
         Font font = Minecraft.getInstance().font;
-        graphics.drawString(font, label, x + 1, y + 1, hovered ? 0xFFFFFFFF : 0xFFCCCCCC, false);
+        graphics.drawString(font, label, x + 2, y + 1, textColor, false);
     }
 
     private boolean isHovered(int mouseX, int mouseY, int x, int y, int w, int h) {

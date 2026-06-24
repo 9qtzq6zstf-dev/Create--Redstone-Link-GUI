@@ -133,7 +133,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         this.blockPreviewBounds = new Rect2i(leftPos + 215, contentTop + 30, 64, 64);
 
         // === 预设面板（浮动在左侧外部） ===
-        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH - 10;
+        int panelX = leftPos - FrequencyPresetPanel.PANEL_WIDTH + 20;
         int panelY = contentTop + 2;
         FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
         this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData);

@@ -35,11 +35,11 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public static final int PRESET_ROWS = 4;
 
     // Slots are positioned relative to leftPos/topPos.
-    // Panel floats at panelX = leftPos - PANEL_WIDTH - 10, panelY = contentTop + 2.
+    // Panel floats at panelX = leftPos - PANEL_WIDTH + 20, panelY = contentTop + 2.
     // Slot absolute = panelX + 3 + col*18, panelY + 16 + row*22
-    // Relative to leftPos: X = (leftPos - 75) + 3 + col*18 - leftPos = -72 + col*18
+    // Relative to leftPos: X = (leftPos - 65 + 20) + 3 + col*18 - leftPos = -42 + col*18
     // Relative to topPos: Y = (topPos + 6) + 2 + 16 + row*22 - topPos = 24 + row*22
-    public static final int PRESET_SLOT_X_START = -72;
+    public static final int PRESET_SLOT_X_START = -42;
     public static final int PRESET_SLOT_Y_START = 24;
     public static final int PRESET_SLOT_SPACING_X = 18;
     public static final int PRESET_SLOT_SPACING_Y = 22;
