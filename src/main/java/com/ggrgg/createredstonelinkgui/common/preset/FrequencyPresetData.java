@@ -105,8 +105,10 @@ public class FrequencyPresetData implements INBTSerializable<CompoundTag> {
         CompoundTag tag = new CompoundTag();
         if (presetIndex < 0 || presetIndex >= PRESET_COUNT) return tag;
         Preset p = presets.get(presetIndex);
-        if (!p.stack0.isEmpty()) tag.put("First", p.stack0.save(registries));
-        if (!p.stack1.isEmpty()) tag.put("Last", p.stack1.save(registries));
+        // Always write both "First" and "Last" keys, even if empty.
+        // LinkBehaviour.readFromClipboard requires both tags to exist.
+        tag.put("First", p.stack0.saveOptional(registries));
+        tag.put("Last", p.stack1.saveOptional(registries));
         return tag;
     }
 
