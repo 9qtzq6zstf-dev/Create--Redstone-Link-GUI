@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  */
 public class FrequencyPresetData implements INBTSerializable<CompoundTag> {
 
-    public static final int PRESET_COUNT = 4;
+    public static final int PRESET_COUNT = 8;
 
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
         DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, CreateRedstoneLinkGUI.MODID);

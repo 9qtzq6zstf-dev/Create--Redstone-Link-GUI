@@ -22,44 +22,71 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
  * Panel displayed to the left of the link config screen.
- * Shows 4 rows of preset frequencies with copy/paste buttons.
- * Buttons grey out when their action would be meaningless:
- * - Copy greyed when both link frequency slots are empty
- * - Paste greyed when both preset slots in that row are empty
+ * Shows rows of preset frequencies with copy/paste buttons.
+ *
+ * <h2>Texture Layout (frequency_preset_panel.png, 256×256)</h2>
+ * <pre>
+ *   HEADER   U=0, V=0   W=65, H=16   — Panel top + "Presets" title background
+ *   ROW      U=0, V=16  W=65, H=22   — Repeated per row, slot/button area
+ *   FOOTER   U=0, V=204 W=65, H=10   — Panel bottom edge border
+ *
+ * Slot and button sub-regions within the ROW segment (at U=0, V=16):
+ *   Slot 0     X=3..19   (16×16)  — First frequency slot position
+ *   Slot 1     X=21..37  (16×16)  — Second frequency slot position
+ *   Copy btn   X=39..50  (12×12)  — Copy-to-preset button
+ *   Paste btn  X=51..62  (12×12)  — Paste-from-preset button
+ *
+ * Button hover variants are at V=38 (ROW_V + ROW_H = 16 + 22):
+ *   Copy hover   X=39, Y=38  (12×12)
+ *   Paste hover  X=51, Y=38  (12×12)
+ * </pre>
+ *
+ * All 256×256 texture coordinates are available for custom slot/button icons.
  */
 public class FrequencyPresetPanel {
 
-    // ==================== 布局常量（先声明，供插槽和面板尺寸引用） ====================
+    // ==================== 布局常量 ====================
     private static final int SLOT_X = 3;
-    private static final int SLOT_Y_START = 16;
+    private static final int SLOT_Y_OFFSET = 3; // Y within a row segment
+    private static final int SLOT_SPACING_X = 18;
     private static final int SLOT_SPACING_Y = 22;
     private static final int SLOT_SIZE = 16;
     private static final int COPY_BTN_X = 39;
     private static final int PASTE_BTN_X = 51;
+    private static final int BTN_Y_OFFSET = 3;
     private static final int BTN_SIZE = 12;
 
-    // ==================== 面板尺寸（从PRESET_COUNT自动计算） ====================
+    // ==================== 面板尺寸（自动计算） ====================
     public static final int PANEL_WIDTH = 65;
+    public static final int HEADER_HEIGHT = 16;
+    public static final int ROW_HEIGHT = 22;
+    public static final int FOOTER_HEIGHT = 10;
     public static final int PANEL_HEIGHT =
-        SLOT_Y_START + FrequencyPresetData.PRESET_COUNT * SLOT_SPACING_Y + 10;
+        HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT + FOOTER_HEIGHT;
 
     // ==================== 纹理资源 ====================
     private static final ResourceLocation PANEL_TEXTURE =
         ResourceLocation.parse("createredstonelinkgui:textures/gui/frequency_preset_panel.png");
 
-    // ==================== 纹理UV坐标（当useTexture=true时使用） ====================
-    private static final int PANEL_U = 0;
-    private static final int PANEL_V = 0;
-    private static final int SLOT_UV_U = 0;
-    private static final int SLOT_UV_V = 112;
-    private static final int COPY_BTN_U = 20;
-    private static final int COPY_BTN_V = 112;
-    private static final int COPY_BTN_HOVER_U = 36;
-    private static final int COPY_BTN_HOVER_V = 112;
-    private static final int PASTE_BTN_U = 52;
-    private static final int PASTE_BTN_V = 112;
-    private static final int PASTE_BTN_HOVER_U = 68;
-    private static final int PASTE_BTN_HOVER_V = 112;
+    // ==================== 纹理UV坐标 — 面板分段 ====================
+    private static final int HEADER_U = 0;
+    private static final int HEADER_V = 0;
+    private static final int ROW_U = 0;
+    private static final int ROW_V = 16;
+    private static final int FOOTER_U = 0;
+    private static final int FOOTER_V = 204;
+
+    // ==================== 纹理UV坐标 — 槽位/按钮（ROW段内） ====================
+    private static final int SLOT_UV_U = 3;
+    private static final int SLOT_UV_V = 16;
+    private static final int COPY_BTN_UV_U = 39;
+    private static final int COPY_BTN_UV_V = 16;
+    private static final int PASTE_BTN_UV_U = 51;
+    private static final int PASTE_BTN_UV_V = 16;
+    private static final int COPY_BTN_HOVER_UV_U = 39;
+    private static final int COPY_BTN_HOVER_UV_V = 38; // ROW_V + ROW_H
+    private static final int PASTE_BTN_HOVER_UV_U = 51;
+    private static final int PASTE_BTN_HOVER_UV_V = 38;
 
     // ==================== 纹理检测 ====================
     private static boolean isTextureAvailable() {
@@ -74,15 +101,8 @@ public class FrequencyPresetPanel {
     private final List<Rect2i> slotBounds;
     private final List<Rect2i> copyBtnBounds;
     private final List<Rect2i> pasteBtnBounds;
-    private final Supplier<Boolean> copyEnabled; // evaluates true when link has frequency items
+    private final Supplier<Boolean> copyEnabled;
 
-    /**
-     * @param panelX Absolute screen X for the panel's top-left corner
-     * @param panelY Absolute screen Y for the panel's top-left corner
-     * @param linkPos Block position of the link being configured
-     * @param presetData The player's preset data
-     * @param copyEnabled Supplier that returns true if the link's frequency slots are not both empty
-     */
     public FrequencyPresetPanel(int panelX, int panelY, BlockPos linkPos, FrequencyPresetData presetData,
                                 Supplier<Boolean> copyEnabled) {
         this.panelX = panelX;
@@ -95,11 +115,11 @@ public class FrequencyPresetPanel {
         this.pasteBtnBounds = new ArrayList<>(FrequencyPresetData.PRESET_COUNT);
 
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
-            int rowY = panelY + SLOT_Y_START + row * SLOT_SPACING_Y;
-            slotBounds.add(new Rect2i(panelX + SLOT_X, rowY, SLOT_SIZE, SLOT_SIZE));
-            slotBounds.add(new Rect2i(panelX + SLOT_X + 18, rowY, SLOT_SIZE, SLOT_SIZE));
-            copyBtnBounds.add(new Rect2i(panelX + COPY_BTN_X, rowY + 3, BTN_SIZE, BTN_SIZE));
-            pasteBtnBounds.add(new Rect2i(panelX + PASTE_BTN_X, rowY + 3, BTN_SIZE, BTN_SIZE));
+            int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
+            slotBounds.add(new Rect2i(panelX + SLOT_X, rowY + SLOT_Y_OFFSET, SLOT_SIZE, SLOT_SIZE));
+            slotBounds.add(new Rect2i(panelX + SLOT_X + SLOT_SPACING_X, rowY + SLOT_Y_OFFSET, SLOT_SIZE, SLOT_SIZE));
+            copyBtnBounds.add(new Rect2i(panelX + COPY_BTN_X, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE));
+            pasteBtnBounds.add(new Rect2i(panelX + PASTE_BTN_X, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE));
         }
     }
 
@@ -113,7 +133,7 @@ public class FrequencyPresetPanel {
             || !presetData.getStack(row, 1).isEmpty();
     }
 
-    // ==================== 渲染 ====================
+    // ==================== 渲染入口 ====================
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         if (isTextureAvailable()) {
             renderWithTexture(graphics, mouseX, mouseY);
@@ -122,80 +142,107 @@ public class FrequencyPresetPanel {
         }
     }
 
+    // ==================== 纹理渲染路径（两遍：先背景再内容） ====================
     private void renderWithTexture(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
         boolean globalCopyEnabled = isCopyGloballyEnabled();
 
-        graphics.blit(PANEL_TEXTURE, panelX, panelY, PANEL_U, PANEL_V, PANEL_WIDTH, PANEL_HEIGHT, 256, 256);
+        // === 第一遍：所有背景段 ===
+        // 面板头部
+        graphics.blit(PANEL_TEXTURE, panelX, panelY, HEADER_U, HEADER_V, PANEL_WIDTH, HEADER_HEIGHT, 256, 256);
+        // 每行
+        for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+            int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
+            graphics.blit(PANEL_TEXTURE, panelX, rowY, ROW_U, ROW_V, PANEL_WIDTH, ROW_HEIGHT, 256, 256);
+        }
+        // 面板底部
+        int footerY = panelY + HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT;
+        graphics.blit(PANEL_TEXTURE, panelX, footerY, FOOTER_U, FOOTER_V, PANEL_WIDTH, FOOTER_HEIGHT, 256, 256);
 
+        // === 第二遍：所有内容层 ===
+        // 标题
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
 
+        // 每行内容
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
-            int rowY = panelY + SLOT_Y_START + row * SLOT_SPACING_Y;
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + 4, 0xFF888888, false);
-
+            int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
+            // 行号
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
+
+            // 槽位背景 + 物品
             for (int col = 0; col < 2; col++) {
-                int slotX = panelX + SLOT_X + col * 18;
-                graphics.blit(PANEL_TEXTURE, slotX, rowY, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
+                int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
+                graphics.blit(PANEL_TEXTURE, slotX, rowY + SLOT_Y_OFFSET, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
                 ItemStack stack = presetData.getStack(row, col);
                 if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, slotX, rowY);
+                    graphics.renderItem(stack, slotX, rowY + SLOT_Y_OFFSET);
                 }
             }
 
+            // 复制按钮
             int copyBtnX = panelX + COPY_BTN_X;
-            boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
-            graphics.blit(PANEL_TEXTURE, copyBtnX, rowY + 3,
-                copyHover ? COPY_BTN_HOVER_U : COPY_BTN_U,
-                copyHover ? COPY_BTN_HOVER_V : COPY_BTN_V,
+            boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
+            graphics.blit(PANEL_TEXTURE, copyBtnX, rowY + BTN_Y_OFFSET,
+                copyHover ? COPY_BTN_HOVER_UV_U : COPY_BTN_UV_U,
+                copyHover ? COPY_BTN_HOVER_UV_V : COPY_BTN_UV_V,
                 BTN_SIZE, BTN_SIZE, 256, 256);
 
+            // 粘贴按钮
             int pasteBtnX = panelX + PASTE_BTN_X;
-            boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
-            graphics.blit(PANEL_TEXTURE, pasteBtnX, rowY + 3,
-                pasteHover ? PASTE_BTN_HOVER_U : PASTE_BTN_U,
-                pasteHover ? PASTE_BTN_HOVER_V : PASTE_BTN_V,
+            boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
+            graphics.blit(PANEL_TEXTURE, pasteBtnX, rowY + BTN_Y_OFFSET,
+                pasteHover ? PASTE_BTN_HOVER_UV_U : PASTE_BTN_UV_U,
+                pasteHover ? PASTE_BTN_HOVER_UV_V : PASTE_BTN_UV_V,
                 BTN_SIZE, BTN_SIZE, 256, 256);
         }
     }
 
+    // ==================== 回退渲染路径（两遍：先背景再内容） ====================
     private void renderFallback(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
         boolean globalCopyEnabled = isCopyGloballyEnabled();
 
-        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + PANEL_HEIGHT, 0xCC333333);
+        // === 第一遍：所有背景段 ===
+        graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + HEADER_HEIGHT, 0xCC333333);
+        for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
+            int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
+            graphics.fill(panelX, rowY, panelX + PANEL_WIDTH, rowY + ROW_HEIGHT,
+                (row % 2 == 0) ? 0xCC2A2A2A : 0xCC333333);
+        }
+        int footerY = panelY + HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT;
+        graphics.fill(panelX, footerY, panelX + PANEL_WIDTH, footerY + FOOTER_HEIGHT, 0xCC222222);
 
+        // === 第二遍：所有内容层 ===
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
 
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
-            int rowY = panelY + SLOT_Y_START + row * SLOT_SPACING_Y;
+            int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
+            boolean pasteEnabled = isPasteEnabled(row);
 
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + 4, 0xFF888888, false);
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
 
             for (int col = 0; col < 2; col++) {
-                int slotX = panelX + SLOT_X + col * 18;
-                drawSlotBackground(graphics, slotX, rowY);
+                int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
+                drawSlotBackground(graphics, slotX, rowY + SLOT_Y_OFFSET);
                 ItemStack stack = presetData.getStack(row, col);
                 if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, slotX, rowY);
+                    graphics.renderItem(stack, slotX, rowY + SLOT_Y_OFFSET);
                 }
             }
 
-            boolean pasteEnabled = isPasteEnabled(row);
             int copyBtnX = panelX + COPY_BTN_X;
+            boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
+            drawButton(graphics, copyBtnX, rowY + BTN_Y_OFFSET, "C", copyHover, globalCopyEnabled);
+
             int pasteBtnX = panelX + PASTE_BTN_X;
-
-            boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
-            boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + 3, BTN_SIZE, BTN_SIZE);
-
-            drawButton(graphics, copyBtnX, rowY + 3, "C", copyHover, globalCopyEnabled);
-            drawButton(graphics, pasteBtnX, rowY + 3, "P", pasteHover, pasteEnabled);
+            boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
+            drawButton(graphics, pasteBtnX, rowY + BTN_Y_OFFSET, "P", pasteHover, pasteEnabled);
         }
     }
 
@@ -247,8 +294,8 @@ public class FrequencyPresetPanel {
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             Rect2i bounds = copyBtnBounds.get(row);
             if (bounds.contains(mouseX, mouseY)) {
-                if (!isCopyGloballyEnabled()) return; // greyed out, no tooltip
-                graphics.renderTooltip(Minecraft.getInstance().font,
+                if (!isCopyGloballyEnabled()) return;
+                graphics.renderTooltip(font,
                     Component.translatable("gui.createredstonelinkgui.copy_to_preset", row + 1)
                         .withStyle(ChatFormatting.GREEN),
                     mouseX, mouseY);
@@ -259,8 +306,8 @@ public class FrequencyPresetPanel {
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             Rect2i bounds = pasteBtnBounds.get(row);
             if (bounds.contains(mouseX, mouseY)) {
-                if (!isPasteEnabled(row)) return; // greyed out, no tooltip
-                graphics.renderTooltip(Minecraft.getInstance().font,
+                if (!isPasteEnabled(row)) return;
+                graphics.renderTooltip(font,
                     Component.translatable("gui.createredstonelinkgui.paste_from_preset", row + 1)
                         .withStyle(ChatFormatting.GOLD),
                     mouseX, mouseY);
@@ -300,7 +347,6 @@ public class FrequencyPresetPanel {
 
     private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered, boolean enabled) {
         if (!enabled) {
-            // Greyed out but still visible
             graphics.fill(x - 1, y - 1, x + BTN_SIZE + 1, y + BTN_SIZE + 1, 0xFF444444);
             graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, 0xFF333333);
             graphics.fill(x, y + BTN_SIZE - 2, x + BTN_SIZE, y + BTN_SIZE - 1, 0xFF555555);
@@ -308,7 +354,6 @@ public class FrequencyPresetPanel {
             graphics.drawString(font, label, x + 2, y + 1, 0xFF888888, false);
             return;
         }
-        // Enabled - bright colors
         int bgColor = hovered ? 0xFF66AAFF : 0xFF4488EE;
         int borderColor = hovered ? 0xFFCCEEFF : 0xFFAACCFF;
         int textColor = 0xFFFFFFFF;
@@ -324,14 +369,13 @@ public class FrequencyPresetPanel {
         return mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h;
     }
 
-    // ==================== 获取槽位边界 ====================
+    // ==================== 边界获取 ====================
     public Rect2i getSlotBounds(int row, int col) {
         int index = row * 2 + col;
         if (index < 0 || index >= slotBounds.size()) return null;
         return slotBounds.get(index);
     }
 
-    // ==================== 获取面板边界 ====================
     public Rect2i getBounds() {
         return new Rect2i(panelX, panelY, PANEL_WIDTH, PANEL_HEIGHT);
     }

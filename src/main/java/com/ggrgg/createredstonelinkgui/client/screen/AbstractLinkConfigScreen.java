@@ -255,8 +255,8 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     // ==================== 跳过预设槽位渲染 ====================
     @Override
     protected void renderSlot(GuiGraphics graphics, Slot slot) {
-        // Skip preset slots (slots 2-9) — the preset panel handles their rendering
-        if (slot.getContainerSlot() >= 2 && slot.getContainerSlot() < 10) {
+        // Skip preset ghost slots (negative X positions) — the preset panel handles their rendering
+        if (slot.x < 0) {
             return;
         }
         super.renderSlot(graphics, slot);
