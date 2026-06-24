@@ -26,40 +26,36 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *
  * <h2>Texture Layout (frequency_preset_panel.png, 256×256)</h2>
  * <pre>
- *   HEADER   U=0, V=0   W=65, H=16   — Panel top + "Presets" title background
- *   ROW      U=0, V=16  W=65, H=22   — Repeated per row, slot/button area
- *   FOOTER   U=0, V=204 W=65, H=10   — Panel bottom edge border
+ *   HEADER   U=0, V=0    W=90, H=18  — Panel top + "Presets" title background
+ *   ROW      U=0, V=18   W=90, H=24  — Repeated per row
+ *   FOOTER   U=0, V=210  W=90, H=10  — Panel bottom edge
  *
- * Slot and button sub-regions within the ROW segment (at U=0, V=16):
- *   Slot 0     X=3..19   (16×16)  — First frequency slot position
- *   Slot 1     X=21..37  (16×16)  — Second frequency slot position
- *   Copy btn   X=39..50  (12×12)  — Copy-to-preset button
- *   Paste btn  X=51..62  (12×12)  — Paste-from-preset button
- *
- * Button hover variants are at V=38 (ROW_V + ROW_H = 16 + 22):
- *   Copy hover   X=39, Y=38  (12×12)
- *   Paste hover  X=51, Y=38  (12×12)
+ * Sub-regions within ROW segment:
+ *   Slot 0 visual  X=4,  Y=18, W=20, H=20  (item at X+2, Y+2)
+ *   Slot 1 visual  X=26, Y=18, W=20, H=20
+ *   Copy btn       X=50, Y=18, W=18, H=18
+ *   Paste btn      X=70, Y=18, W=18, H=18
+ *   Copy hover     X=50, Y=42 (18+24)
+ *   Paste hover    X=70, Y=42
  * </pre>
- *
- * All 256×256 texture coordinates are available for custom slot/button icons.
  */
 public class FrequencyPresetPanel {
 
     // ==================== 布局常量 ====================
-    private static final int SLOT_X = 3;
-    private static final int SLOT_Y_OFFSET = 3; // Y within a row segment
-    private static final int SLOT_SPACING_X = 18;
-    private static final int SLOT_SPACING_Y = 22;
-    private static final int SLOT_SIZE = 16;
-    private static final int COPY_BTN_X = 39;
-    private static final int PASTE_BTN_X = 51;
-    private static final int BTN_Y_OFFSET = 3;
-    private static final int BTN_SIZE = 12;
+    private static final int SLOT_X = 4;
+    private static final int SLOT_Y_OFFSET = 4;       // Y within a row segment
+    private static final int SLOT_SPACING_X = 22;      // 20 slot + 2 gap
+    private static final int SLOT_SIZE = 20;           // visual slot with 4px border (16+4)
+    private static final int ITEM_OFFSET = 2;          // item renders at +2 within slot
+    private static final int COPY_BTN_X = 50;
+    private static final int PASTE_BTN_X = 70;
+    private static final int BTN_Y_OFFSET = 3;         // centered 18px in 24px row
+    private static final int BTN_SIZE = 18;            // matches ICON_SIZE=18
 
-    // ==================== 面板尺寸（自动计算） ====================
-    public static final int PANEL_WIDTH = 65;
-    public static final int HEADER_HEIGHT = 16;
-    public static final int ROW_HEIGHT = 22;
+    // ==================== 面板尺寸 ====================
+    public static final int PANEL_WIDTH = 90;
+    public static final int HEADER_HEIGHT = 18;
+    public static final int ROW_HEIGHT = 24;
     public static final int FOOTER_HEIGHT = 10;
     public static final int PANEL_HEIGHT =
         HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT + FOOTER_HEIGHT;
@@ -72,21 +68,21 @@ public class FrequencyPresetPanel {
     private static final int HEADER_U = 0;
     private static final int HEADER_V = 0;
     private static final int ROW_U = 0;
-    private static final int ROW_V = 16;
+    private static final int ROW_V = 18;
     private static final int FOOTER_U = 0;
-    private static final int FOOTER_V = 204;
+    private static final int FOOTER_V = 210;
 
-    // ==================== 纹理UV坐标 — 槽位/按钮（ROW段内） ====================
-    private static final int SLOT_UV_U = 3;
-    private static final int SLOT_UV_V = 16;
-    private static final int COPY_BTN_UV_U = 39;
-    private static final int COPY_BTN_UV_V = 16;
-    private static final int PASTE_BTN_UV_U = 51;
-    private static final int PASTE_BTN_UV_V = 16;
-    private static final int COPY_BTN_HOVER_UV_U = 39;
-    private static final int COPY_BTN_HOVER_UV_V = 38; // ROW_V + ROW_H
-    private static final int PASTE_BTN_HOVER_UV_U = 51;
-    private static final int PASTE_BTN_HOVER_UV_V = 38;
+    // ==================== 纹理UV坐标 — 槽位/按钮 ====================
+    private static final int SLOT_UV_U = 4;
+    private static final int SLOT_UV_V = 18;
+    private static final int COPY_BTN_UV_U = 50;
+    private static final int COPY_BTN_UV_V = 18;
+    private static final int PASTE_BTN_UV_U = 70;
+    private static final int PASTE_BTN_UV_V = 18;
+    private static final int COPY_BTN_HOVER_UV_U = 50;
+    private static final int COPY_BTN_HOVER_UV_V = 42; // 18 + 24
+    private static final int PASTE_BTN_HOVER_UV_U = 70;
+    private static final int PASTE_BTN_HOVER_UV_V = 42;
 
     // ==================== 纹理检测 ====================
     private static boolean isTextureAvailable() {
@@ -142,48 +138,40 @@ public class FrequencyPresetPanel {
         }
     }
 
-    // ==================== 纹理渲染路径（两遍：先背景再内容） ====================
+    // ==================== 纹理渲染路径 ====================
     private void renderWithTexture(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
         boolean globalCopyEnabled = isCopyGloballyEnabled();
 
-        // === 第一遍：所有背景段 ===
-        // 面板头部
+        // PASS 1: backgrounds
         graphics.blit(PANEL_TEXTURE, panelX, panelY, HEADER_U, HEADER_V, PANEL_WIDTH, HEADER_HEIGHT, 256, 256);
-        // 每行
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             graphics.blit(PANEL_TEXTURE, panelX, rowY, ROW_U, ROW_V, PANEL_WIDTH, ROW_HEIGHT, 256, 256);
         }
-        // 面板底部
         int footerY = panelY + HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT;
         graphics.blit(PANEL_TEXTURE, panelX, footerY, FOOTER_U, FOOTER_V, PANEL_WIDTH, FOOTER_HEIGHT, 256, 256);
 
-        // === 第二遍：所有内容层 ===
-        // 标题
+        // PASS 2: content
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
 
-        // 每行内容
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            // 行号
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
 
-            // 槽位背景 + 物品
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
                 graphics.blit(PANEL_TEXTURE, slotX, rowY + SLOT_Y_OFFSET, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
                 ItemStack stack = presetData.getStack(row, col);
                 if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, slotX, rowY + SLOT_Y_OFFSET);
+                    graphics.renderItem(stack, slotX + ITEM_OFFSET, rowY + SLOT_Y_OFFSET + ITEM_OFFSET);
                 }
             }
 
-            // 复制按钮
             int copyBtnX = panelX + COPY_BTN_X;
             boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
             graphics.blit(PANEL_TEXTURE, copyBtnX, rowY + BTN_Y_OFFSET,
@@ -191,7 +179,6 @@ public class FrequencyPresetPanel {
                 copyHover ? COPY_BTN_HOVER_UV_V : COPY_BTN_UV_V,
                 BTN_SIZE, BTN_SIZE, 256, 256);
 
-            // 粘贴按钮
             int pasteBtnX = panelX + PASTE_BTN_X;
             boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
             graphics.blit(PANEL_TEXTURE, pasteBtnX, rowY + BTN_Y_OFFSET,
@@ -201,12 +188,12 @@ public class FrequencyPresetPanel {
         }
     }
 
-    // ==================== 回退渲染路径（两遍：先背景再内容） ====================
+    // ==================== 回退渲染路径 ====================
     private void renderFallback(GuiGraphics graphics, int mouseX, int mouseY) {
         Font font = Minecraft.getInstance().font;
         boolean globalCopyEnabled = isCopyGloballyEnabled();
 
-        // === 第一遍：所有背景段 ===
+        // PASS 1: backgrounds
         graphics.fill(panelX, panelY, panelX + PANEL_WIDTH, panelY + HEADER_HEIGHT, 0xCC333333);
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
@@ -216,7 +203,7 @@ public class FrequencyPresetPanel {
         int footerY = panelY + HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT;
         graphics.fill(panelX, footerY, panelX + PANEL_WIDTH, footerY + FOOTER_HEIGHT, 0xCC222222);
 
-        // === 第二遍：所有内容层 ===
+        // PASS 2: content
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, panelX + (PANEL_WIDTH - titleWidth) / 2, panelY + 4, 0xFFC8C8C8, false);
@@ -225,14 +212,14 @@ public class FrequencyPresetPanel {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 10, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
 
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
                 drawSlotBackground(graphics, slotX, rowY + SLOT_Y_OFFSET);
                 ItemStack stack = presetData.getStack(row, col);
                 if (!stack.isEmpty()) {
-                    graphics.renderItem(stack, slotX, rowY + SLOT_Y_OFFSET);
+                    graphics.renderItem(stack, slotX + ITEM_OFFSET, rowY + SLOT_Y_OFFSET + ITEM_OFFSET);
                 }
             }
 
@@ -341,28 +328,26 @@ public class FrequencyPresetPanel {
 
     // ==================== 辅助绘制方法 ====================
     private void drawSlotBackground(GuiGraphics graphics, int x, int y) {
-        graphics.fill(x - 1, y - 1, x + SLOT_SIZE + 1, y + SLOT_SIZE + 1, 0xFF555555);
-        graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0xFF333333);
+        // 20×20 slot visual with 4px border
+        graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0xFF555555);
+        graphics.fill(x + 1, y + 1, x + SLOT_SIZE - 1, y + SLOT_SIZE - 1, 0xFF333333);
     }
 
     private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered, boolean enabled) {
         if (!enabled) {
-            graphics.fill(x - 1, y - 1, x + BTN_SIZE + 1, y + BTN_SIZE + 1, 0xFF444444);
-            graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, 0xFF333333);
-            graphics.fill(x, y + BTN_SIZE - 2, x + BTN_SIZE, y + BTN_SIZE - 1, 0xFF555555);
+            graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, 0xFF444444);
+            graphics.fill(x + 1, y + 1, x + BTN_SIZE - 1, y + BTN_SIZE - 1, 0xFF333333);
             Font font = Minecraft.getInstance().font;
-            graphics.drawString(font, label, x + 2, y + 1, 0xFF888888, false);
+            graphics.drawString(font, label, x + 4, y + 3, 0xFF888888, false);
             return;
         }
         int bgColor = hovered ? 0xFF66AAFF : 0xFF4488EE;
-        int borderColor = hovered ? 0xFFCCEEFF : 0xFFAACCFF;
         int textColor = 0xFFFFFFFF;
-        graphics.fill(x - 1, y - 1, x + BTN_SIZE + 1, y + BTN_SIZE + 1, borderColor);
         graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, bgColor);
-        graphics.fill(x, y + BTN_SIZE - 2, x + BTN_SIZE, y + BTN_SIZE - 1,
-            label.equals("C") ? 0xFF00FF00 : 0xFF00AAFF);
+        graphics.fill(x + 1, y + 1, x + BTN_SIZE - 1, y + BTN_SIZE - 1,
+            hovered ? 0xFF77BBFF : 0xFF5599FF);
         Font font = Minecraft.getInstance().font;
-        graphics.drawString(font, label, x + 2, y + 1, textColor, false);
+        graphics.drawString(font, label, x + 4, y + 3, textColor, false);
     }
 
     private boolean isHovered(int mouseX, int mouseY, int x, int y, int w, int h) {
