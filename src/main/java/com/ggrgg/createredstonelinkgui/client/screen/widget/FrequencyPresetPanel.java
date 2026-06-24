@@ -26,37 +26,38 @@ import net.neoforged.neoforge.network.PacketDistributor;
  *
  * <h2>Texture Layout (frequency_preset_panel.png, 256×256)</h2>
  * <pre>
- *   HEADER   U=0, V=0    W=90, H=18  — Panel top + "Presets" title background
- *   ROW      U=0, V=18   W=90, H=24  — Repeated per row
- *   FOOTER   U=0, V=210  W=90, H=10  — Panel bottom edge
+ *   HEADER   U=0, V=0    W=90, H=21  — Panel top + "Presets" title background
+ *   ROW      U=0, V=21   W=90, H=27  — Repeated per row
+ *   FOOTER   U=0, V=129  W=90, H=13  — Panel bottom edge
  *
- * Sub-regions within ROW segment:
- *   Slot 0 visual  X=4,  Y=18, W=20, H=20  (item at X+2, Y+2)
- *   Slot 1 visual  X=26, Y=18, W=20, H=20
- *   Copy btn       X=50, Y=18, W=18, H=18
- *   Paste btn      X=70, Y=18, W=18, H=18
- *   Copy hover     X=50, Y=42 (18+24)
- *   Paste hover    X=70, Y=42
+ * Sub-regions within ROW segment (at V=21):
+ *   Slot 0 outer  X=2,  Y=21, W=23, H=23  (inner 16×16 item at +3,+3)
+ *   Slot 1 outer  X=27, Y=21, W=23, H=23
+ *   Copy btn      X=52, Y=21, W=18, H=18
+ *   Paste btn     X=72, Y=21, W=18, H=18
+ *   Copy hover    X=52, Y=48 (21+27)
+ *   Paste hover   X=72, Y=48
  * </pre>
  */
 public class FrequencyPresetPanel {
 
     // ==================== 布局常量 ====================
-    private static final int SLOT_X = 4;
+    private static final int SLOT_X = 2;
     private static final int SLOT_Y_OFFSET = 4;       // Y within a row segment
-    private static final int SLOT_SPACING_X = 22;      // 20 slot + 2 gap
-    private static final int SLOT_SIZE = 20;           // visual slot with 4px border (16+4)
-    private static final int ITEM_OFFSET = 2;          // item renders at +2 within slot
-    private static final int COPY_BTN_X = 50;
-    private static final int PASTE_BTN_X = 70;
-    private static final int BTN_Y_OFFSET = 3;         // centered 18px in 24px row
-    private static final int BTN_SIZE = 18;            // matches ICON_SIZE=18
+    private static final int SLOT_OUTER_SIZE = 23;     // outer bounding box (16 item + 5 extra = 21, + 2 border = 23)
+    private static final int SLOT_SPACING_X = 25;      // 23 outer + 2 gap
+    private static final int SLOT_INNER_SIZE = 16;     // inner slot visual
+    private static final int ITEM_OFFSET = 3;          // center 16×16 item in 23×23: (23-16)/2 ≈ 3
+    private static final int COPY_BTN_X = 52;
+    private static final int PASTE_BTN_X = 72;
+    private static final int BTN_Y_OFFSET = 5;         // centered in 27px row, 2px down from previous
+    private static final int BTN_SIZE = 18;
 
     // ==================== 面板尺寸 ====================
     public static final int PANEL_WIDTH = 90;
-    public static final int HEADER_HEIGHT = 18;
-    public static final int ROW_HEIGHT = 24;
-    public static final int FOOTER_HEIGHT = 10;
+    public static final int HEADER_HEIGHT = 21;
+    public static final int ROW_HEIGHT = 27;
+    public static final int FOOTER_HEIGHT = 13;
     public static final int PANEL_HEIGHT =
         HEADER_HEIGHT + FrequencyPresetData.PRESET_COUNT * ROW_HEIGHT + FOOTER_HEIGHT;
 
@@ -68,21 +69,21 @@ public class FrequencyPresetPanel {
     private static final int HEADER_U = 0;
     private static final int HEADER_V = 0;
     private static final int ROW_U = 0;
-    private static final int ROW_V = 18;
+    private static final int ROW_V = 21;
     private static final int FOOTER_U = 0;
-    private static final int FOOTER_V = 210;
+    private static final int FOOTER_V = 129;
 
     // ==================== 纹理UV坐标 — 槽位/按钮 ====================
-    private static final int SLOT_UV_U = 4;
-    private static final int SLOT_UV_V = 18;
-    private static final int COPY_BTN_UV_U = 50;
-    private static final int COPY_BTN_UV_V = 18;
-    private static final int PASTE_BTN_UV_U = 70;
-    private static final int PASTE_BTN_UV_V = 18;
-    private static final int COPY_BTN_HOVER_UV_U = 50;
-    private static final int COPY_BTN_HOVER_UV_V = 42; // 18 + 24
-    private static final int PASTE_BTN_HOVER_UV_U = 70;
-    private static final int PASTE_BTN_HOVER_UV_V = 42;
+    private static final int SLOT_OUTER_UV_U = 2;
+    private static final int SLOT_OUTER_UV_V = 21;
+    private static final int COPY_BTN_UV_U = 52;
+    private static final int COPY_BTN_UV_V = 21;
+    private static final int PASTE_BTN_UV_U = 72;
+    private static final int PASTE_BTN_UV_V = 21;
+    private static final int COPY_BTN_HOVER_UV_U = 52;
+    private static final int COPY_BTN_HOVER_UV_V = 48; // 21 + 27
+    private static final int PASTE_BTN_HOVER_UV_U = 72;
+    private static final int PASTE_BTN_HOVER_UV_V = 48;
 
     // ==================== 纹理检测 ====================
     private static boolean isTextureAvailable() {
@@ -112,8 +113,8 @@ public class FrequencyPresetPanel {
 
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
-            slotBounds.add(new Rect2i(panelX + SLOT_X, rowY + SLOT_Y_OFFSET, SLOT_SIZE, SLOT_SIZE));
-            slotBounds.add(new Rect2i(panelX + SLOT_X + SLOT_SPACING_X, rowY + SLOT_Y_OFFSET, SLOT_SIZE, SLOT_SIZE));
+            slotBounds.add(new Rect2i(panelX + SLOT_X, rowY + SLOT_Y_OFFSET, SLOT_OUTER_SIZE, SLOT_OUTER_SIZE));
+            slotBounds.add(new Rect2i(panelX + SLOT_X + SLOT_SPACING_X, rowY + SLOT_Y_OFFSET, SLOT_OUTER_SIZE, SLOT_OUTER_SIZE));
             copyBtnBounds.add(new Rect2i(panelX + COPY_BTN_X, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE));
             pasteBtnBounds.add(new Rect2i(panelX + PASTE_BTN_X, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE));
         }
@@ -161,11 +162,12 @@ public class FrequencyPresetPanel {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 5, 0xFF888888, false);
 
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
-                graphics.blit(PANEL_TEXTURE, slotX, rowY + SLOT_Y_OFFSET, SLOT_UV_U, SLOT_UV_V, SLOT_SIZE, SLOT_SIZE, 256, 256);
+                // Draw outer slot bounding box
+                graphics.blit(PANEL_TEXTURE, slotX, rowY + SLOT_Y_OFFSET, SLOT_OUTER_UV_U, SLOT_OUTER_UV_V, SLOT_OUTER_SIZE, SLOT_OUTER_SIZE, 256, 256);
                 ItemStack stack = presetData.getStack(row, col);
                 if (!stack.isEmpty()) {
                     graphics.renderItem(stack, slotX + ITEM_OFFSET, rowY + SLOT_Y_OFFSET + ITEM_OFFSET);
@@ -212,7 +214,7 @@ public class FrequencyPresetPanel {
             int rowY = panelY + HEADER_HEIGHT + row * ROW_HEIGHT;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 4, 0xFF888888, false);
+            graphics.drawString(font, String.valueOf(row + 1), panelX + SLOT_X - 12, rowY + SLOT_Y_OFFSET + 5, 0xFF888888, false);
 
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
@@ -328,9 +330,10 @@ public class FrequencyPresetPanel {
 
     // ==================== 辅助绘制方法 ====================
     private void drawSlotBackground(GuiGraphics graphics, int x, int y) {
-        // 20×20 slot visual with 4px border
-        graphics.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0xFF555555);
-        graphics.fill(x + 1, y + 1, x + SLOT_SIZE - 1, y + SLOT_SIZE - 1, 0xFF333333);
+        // Outer 23×23 bounding box
+        graphics.fill(x, y, x + SLOT_OUTER_SIZE, y + SLOT_OUTER_SIZE, 0xFF555555);
+        // Inner "normal inventory slot" 16×16 centered (offset 3 in 23)
+        graphics.fill(x + ITEM_OFFSET, y + ITEM_OFFSET, x + ITEM_OFFSET + SLOT_INNER_SIZE, y + ITEM_OFFSET + SLOT_INNER_SIZE, 0xFF333333);
     }
 
     private void drawButton(GuiGraphics graphics, int x, int y, String label, boolean hovered, boolean enabled) {
@@ -341,13 +344,11 @@ public class FrequencyPresetPanel {
             graphics.drawString(font, label, x + 4, y + 3, 0xFF888888, false);
             return;
         }
-        int bgColor = hovered ? 0xFF66AAFF : 0xFF4488EE;
-        int textColor = 0xFFFFFFFF;
-        graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, bgColor);
+        graphics.fill(x, y, x + BTN_SIZE, y + BTN_SIZE, 0xFF4488EE);
         graphics.fill(x + 1, y + 1, x + BTN_SIZE - 1, y + BTN_SIZE - 1,
             hovered ? 0xFF77BBFF : 0xFF5599FF);
         Font font = Minecraft.getInstance().font;
-        graphics.drawString(font, label, x + 4, y + 3, textColor, false);
+        graphics.drawString(font, label, x + 4, y + 3, 0xFFFFFFFF, false);
     }
 
     private boolean isHovered(int mouseX, int mouseY, int x, int y, int w, int h) {
