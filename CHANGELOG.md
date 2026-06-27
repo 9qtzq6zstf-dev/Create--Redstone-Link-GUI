@@ -2,7 +2,8 @@
 
 # 1.21.1-1.9.0
 
-- Add copy & paste function
+- Add preset copy & paste function
+- Lots of refactoring
 
 # 1.21.1-1.8.3
 
