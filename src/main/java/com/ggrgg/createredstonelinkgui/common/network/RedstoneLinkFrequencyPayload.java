@@ -1,7 +1,6 @@
 package com.ggrgg.createredstonelinkgui.common.network;
 
-import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
-import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
@@ -44,7 +43,7 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
             if (be != null) {
                 LinkBehaviour behaviour = BlockEntityBehaviour.get(be, LinkBehaviour.TYPE);
                 if (behaviour != null) {
-                    RedstoneLinkMenu.applyFrequencyChangeDirect(behaviour, payload.slotIndex() == 0, payload.selectedItem());
+                    FrequencyHelper.applyFrequencyChangeDirect(behaviour, payload.slotIndex() == 0, payload.selectedItem());
                     be.setChanged();
                     level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
                 } else {
@@ -53,7 +52,7 @@ public record RedstoneLinkFrequencyPayload(BlockPos pos, ItemStack selectedItem,
                     if (vlb != null) {
                         // Ownership check — non-owners cannot change frequencies
                         if (!com.ggrgg.createredstonelinkgui.common.VoidLinkHelper.canInteract(vlb, player)) return;
-                        VoidLinkMenu.applyFrequencyChangeDirect(vlb, payload.slotIndex() == 0, payload.selectedItem());
+                        FrequencyHelper.applyFrequencyChangeDirect(vlb, payload.slotIndex() == 0, payload.selectedItem());
                         be.setChanged();
                         level.sendBlockUpdated(pos, be.getBlockState(), be.getBlockState(), 3);
                     }

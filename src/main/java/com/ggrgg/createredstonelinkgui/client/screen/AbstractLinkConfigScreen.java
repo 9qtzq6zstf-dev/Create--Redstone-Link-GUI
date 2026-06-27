@@ -92,7 +92,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
 
     /**
      * Apply a frequency change on the server side.
-     * Calls RedstoneLinkMenu.applyFrequencyChangeDirect or VoidLinkMenu.applyFrequencyChangeDirect.
+     * Delegates to {@link com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper#applyFrequencyChangeDirect}.
      */
     protected abstract void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack);
 

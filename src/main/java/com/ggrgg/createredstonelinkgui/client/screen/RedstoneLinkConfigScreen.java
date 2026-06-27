@@ -1,6 +1,7 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
+import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
 import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
@@ -38,8 +39,8 @@ public class RedstoneLinkConfigScreen extends AbstractLinkConfigScreen<RedstoneL
     @Override
     protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
         Object behaviour = getBehaviour();
-        if (behaviour instanceof LinkBehaviour lb) {
-            RedstoneLinkMenu.applyFrequencyChangeDirect(lb, isFirst, stack);
+        if (behaviour != null) {
+            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
         }
     }
 

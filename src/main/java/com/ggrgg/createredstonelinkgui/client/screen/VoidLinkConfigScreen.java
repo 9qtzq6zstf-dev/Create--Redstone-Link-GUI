@@ -1,6 +1,7 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
+import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
 
@@ -46,7 +47,7 @@ public class VoidLinkConfigScreen extends AbstractLinkConfigScreen<VoidLinkMenu>
     protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
         Object behaviour = getBehaviour();
         if (behaviour != null) {
-            VoidLinkMenu.applyFrequencyChangeDirect(behaviour, isFirst, stack);
+            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
         }
     }
 
