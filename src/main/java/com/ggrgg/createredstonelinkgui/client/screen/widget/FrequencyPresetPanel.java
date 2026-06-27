@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
 import com.ggrgg.createredstonelinkgui.common.network.CopyToPresetPayload;
 import com.ggrgg.createredstonelinkgui.common.network.PasteFromPresetPayload;
+import com.ggrgg.createredstonelinkgui.compat.frequency.FrequencyItemHelper;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -240,7 +241,7 @@ public class FrequencyPresetPanel {
                         List<Component> tooltipLines = new ArrayList<>();
                         tooltipLines.add(label);
                         int lineCount = 1;
-                        if (isFrequencySymbol(stack)) {
+                        if (FrequencyItemHelper.isFrequencySymbol(stack)) {
                             tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
                                     .withStyle(ChatFormatting.GOLD));
                             lineCount = 2;
@@ -281,17 +282,6 @@ public class FrequencyPresetPanel {
                 return;
             }
         }
-    }
-
-    // ==================== 频率符号检测 ====================
-    private static boolean isFrequencySymbol(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (!id.getNamespace().equals("frequency")) return false;
-        String path = id.getPath();
-        if (!path.startsWith("symbol_")) return false;
-        if (path.equals("symbol_frame")) return false;
-        return true;
     }
 
     // ==================== 鼠标点击 ====================

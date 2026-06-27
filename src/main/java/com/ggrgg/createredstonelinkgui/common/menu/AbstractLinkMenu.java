@@ -68,7 +68,7 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
     /**
      * @return the behaviour object (LinkBehaviour or VoidLinkBehaviour), or null
      */
-    protected abstract Object getBehaviour();
+    public abstract Object getBehaviour();
 
     /**
      * @return true if the given slotId is a frequency slot that this base class
@@ -107,26 +107,43 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        // Frequency slots (0, 1)
-        if (isFrequencySlot(slotId)) {
+        // Frequency slots (0, 1) — only handle normal pickups and throw
+        // Let QUICK_MOVE (shift-click), SWAP (hotbar keys), DOUBLE_CLICK, CLONE
+        // fall through to super.clicked() which will safely ignore them
+        // because GhostRecipeSlot.mayPlace() and mayPickup() both return false.
+        if (isFrequencySlot(slotId) && (clickType == ClickType.PICKUP || clickType == ClickType.THROW)) {
             handleFrequencySlotClick(slotId, button, clickType, player);
             return;
         }
-        // Preset slots (2-9)
-        if (handlePresetSlotClick(slotId, button, clickType, player)) return;
+        // Preset slots (2-9) — same restriction
+        if (clickType == ClickType.PICKUP || clickType == ClickType.THROW) {
+            if (handlePresetSlotClick(slotId, button, clickType, player)) return;
+        }
         super.clicked(slotId, button, clickType, player);
     }
 
+    /**
+     * Handle clicks on frequency slots (0, 1).
+     * Consumes the carried item to prevent the same item from "bleeding" into
+     * subsequent slot clicks (which was the root cause of apparent cross-contamination).
+     */
     protected void handleFrequencySlotClick(int slotId, int button, ClickType clickType, Player player) {
         var slot = this.getSlot(slotId);
         ItemStack targetStack = ItemStack.EMPTY;
 
         if (button == 1 || clickType == ClickType.THROW) {
+            // Right-click or Q: clear the slot
             slot.set(ItemStack.EMPTY);
         } else {
+            // Left-click: place a single copy of the carried item, then consume it
             ItemStack carried = getCarried();
-            targetStack = carried.copy();
-            slot.set(targetStack);
+            if (!carried.isEmpty()) {
+                targetStack = carried.copy();
+                targetStack.setCount(1);
+                slot.set(targetStack);
+                // 🔴 FIX: Consume the carried item so it doesn't appear in subsequent clicks
+                setCarried(ItemStack.EMPTY);
+            }
         }
 
         if (player.level().isClientSide()) {
@@ -136,30 +153,33 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
         }
     }
 
+    /**
+     * Handle clicks on preset slots (2-9).
+     * All writes go through GhostRecipeSlot.set() which calls the updateCallback,
+     * so there is no need for a separate direct presetData.setStack() call.
+     * Consumes the carried item to prevent cross-contamination.
+     */
     protected boolean handlePresetSlotClick(int slotId, int button, ClickType clickType, Player player) {
         if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
-            FrequencyPresetData presetData = FrequencyPresetData.get(player);
-            int presetIndex = (slotId - PRESET_SLOT_START) / PRESET_SLOTS_PER_ROW;
-            int slotIndex = (slotId - PRESET_SLOT_START) % PRESET_SLOTS_PER_ROW;
+            var slot = this.getSlot(slotId);
 
             // Right-click (button 1) or Q-throw: clear the slot
             if (button == 1 || clickType == ClickType.THROW) {
-                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                this.getSlot(slotId).set(ItemStack.EMPTY);
+                slot.set(ItemStack.EMPTY);
                 return true;
             }
 
-            // Left-click (button 0): place carried item
+            // Left-click (button 0): place a single copy of the carried item
             ItemStack carried = getCarried();
             if (!carried.isEmpty()) {
                 ItemStack placed = carried.copy();
                 placed.setCount(1);
-                presetData.setStack(presetIndex, slotIndex, placed);
-                this.getSlot(slotId).set(placed);
+                slot.set(placed);
+                // 🔴 FIX: Consume the carried item so it doesn't appear in subsequent clicks
+                setCarried(ItemStack.EMPTY);
             } else {
-                // Carried is empty, clear the slot
-                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                this.getSlot(slotId).set(ItemStack.EMPTY);
+                // Carried is empty — clear the slot
+                slot.set(ItemStack.EMPTY);
             }
             return true;
         }

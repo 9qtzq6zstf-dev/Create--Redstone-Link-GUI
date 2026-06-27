@@ -5,7 +5,10 @@ import java.util.List;
 
 import com.ggrgg.createredstonelinkgui.client.RedstoneLinkMoveHandler;
 import com.ggrgg.createredstonelinkgui.client.screen.widget.FrequencyPresetPanel;
+import com.ggrgg.createredstonelinkgui.common.menu.AbstractLinkMenu;
+import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.preset.FrequencyPresetData;
+import com.ggrgg.createredstonelinkgui.compat.frequency.FrequencyItemHelper;
 import com.ggrgg.createredstonelinkgui.compat.frequency.SymbolPickerScreen;
 
 import net.minecraft.ChatFormatting;
@@ -16,19 +19,21 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
  * Abstract base for redstone link and void link config screens.
  * Consolidates ~80% shared code between RedstoneLinkConfigScreen and VoidLinkConfigScreen.
+ * 
+ * <p>The generic bound is {@link AbstractLinkMenu}, giving subclasses direct access
+ * to {@link AbstractLinkMenu#getPos()}, {@link AbstractLinkMenu#getBehaviour()},
+ * and everything inherited from AbstractContainerMenu.
  */
-public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
+public abstract class AbstractLinkConfigScreen<T extends AbstractLinkMenu>
         extends AbstractContainerScreen<T> {
 
     // ==================== 共享纹理 ====================
@@ -84,17 +89,16 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
     /** The overlay texture for this link type (redstone_link.png or void_link.png). */
     protected abstract ResourceLocation getOverlayTexture();
 
-    /** The block position of the link block. */
-    protected abstract BlockPos getBlockPos();
-
-    /** The block behaviour object (LinkBehaviour or VoidLinkBehaviour). */
-    protected abstract Object getBehaviour();
-
     /**
      * Apply a frequency change on the server side.
-     * Delegates to {@link com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper#applyFrequencyChangeDirect}.
+     * Default implementation uses {@link FrequencyHelper#applyFrequencyChangeDirect} via the menu.
      */
-    protected abstract void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack);
+    protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
+        Object behaviour = this.menu.getBehaviour();
+        if (behaviour != null) {
+            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
+        }
+    }
 
     /** Block preview X offset relative to screen left. */
     protected abstract int getBlockPreviewX();
@@ -137,7 +141,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         int panelY = contentTop + 2;
         FrequencyPresetData presetData = FrequencyPresetData.get(this.minecraft.player);
         // Copy is enabled if either frequency slot has an item
-        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, getBlockPos(), presetData,
+        this.presetPanel = new FrequencyPresetPanel(panelX, panelY, this.menu.getPos(), presetData,
             () -> !this.menu.getSlot(0).getItem().isEmpty()
                || !this.menu.getSlot(1).getItem().isEmpty());
         this.presetPanelBounds = new Rect2i(panelX, panelY,
@@ -151,7 +155,7 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
             MOVE_UV_X, MOVE_UV_Y,
             Component.translatable("gui.createredstonelinkgui.relocate"),
             (btn) -> {
-                RedstoneLinkMoveHandler.startRelocating(getBlockPos());
+                RedstoneLinkMoveHandler.startRelocating(this.menu.getPos());
                 this.minecraft.setScreen(null);
             }
         );
@@ -174,25 +178,14 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
 
     // ==================== 频率更新 ====================
     public void updateFrequencySlot(int slotIndex, ItemStack stack) {
-        Object behaviour = getBehaviour();
+        Object behaviour = this.menu.getBehaviour();
         if (behaviour != null) {
             applyFrequencyChange(slotIndex, slotIndex == 0, stack);
         }
         com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload payload =
             new com.ggrgg.createredstonelinkgui.common.network.RedstoneLinkFrequencyPayload(
-                getBlockPos(), stack, slotIndex);
+                this.menu.getPos(), stack, slotIndex);
         net.neoforged.neoforge.network.PacketDistributor.sendToServer(payload);
-    }
-
-    // ==================== 频率符号检测 ====================
-    private static boolean isFrequencySymbol(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        if (!id.getNamespace().equals("frequency")) return false;
-        String path = id.getPath();
-        if (!path.startsWith("symbol_")) return false;
-        if (path.equals("symbol_frame")) return false;
-        return true;
     }
 
     private int hitTestFrequencySlot(double mouseX, double mouseY) {
@@ -219,10 +212,10 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
                         Rect2i bounds = presetPanel.getSlotBounds(row, col);
                         if (bounds != null && bounds.contains((int) mouseX, (int) mouseY)) {
                             ItemStack current = presetData.getStack(row, col);
-                            if (isFrequencySymbol(current)) {
+                            if (FrequencyItemHelper.isFrequencySymbol(current)) {
                                 final int r = row;
                                 final int c = col;
-                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(),
+                                Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(),
                                     stack -> {
                                         presetData.setStack(r, c, stack);
                                         net.neoforged.neoforge.network.PacketDistributor.sendToServer(
@@ -242,8 +235,8 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
             int slot = hitTestFrequencySlot(mouseX, mouseY);
             if (slot >= 0) {
                 ItemStack current = this.menu.getSlot(slot).getItem();
-                if (isFrequencySymbol(current)) {
-                    Minecraft.getInstance().setScreen(new SymbolPickerScreen(getBlockPos(), slot));
+                if (FrequencyItemHelper.isFrequencySymbol(current)) {
+                    Minecraft.getInstance().setScreen(new SymbolPickerScreen(this.menu.getPos(), slot));
                     return true;
                 }
                 return true;
@@ -276,12 +269,12 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
         // ========== 频率槽位工具提示 ==========
         if (this.slot1Bounds != null && this.slot1Bounds.contains(mouseX, mouseY)) {
             Slot slot = this.menu.getSlot(0);
-            int lineCount = 1 + (isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            int lineCount = 1 + (FrequencyItemHelper.isFrequencySymbol(slot.getItem()) ? 1 : 0);
             int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
             List<Component> tooltipLines = new ArrayList<>();
             tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_first")
                     .withStyle(ChatFormatting.BLUE));
-            if (isFrequencySymbol(slot.getItem())) {
+            if (FrequencyItemHelper.isFrequencySymbol(slot.getItem())) {
                 tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
                         .withStyle(ChatFormatting.GOLD));
             }
@@ -289,12 +282,12 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
                     mouseX, mouseY + yOffset);
         } else if (this.slot2Bounds != null && this.slot2Bounds.contains(mouseX, mouseY)) {
             Slot slot = this.menu.getSlot(1);
-            int lineCount = 1 + (isFrequencySymbol(slot.getItem()) ? 1 : 0);
+            int lineCount = 1 + (FrequencyItemHelper.isFrequencySymbol(slot.getItem()) ? 1 : 0);
             int yOffset = -20 - (lineCount - 1) * this.minecraft.font.lineHeight;
             List<Component> tooltipLines = new ArrayList<>();
             tooltipLines.add(Component.translatable("gui.createredstonelinkgui.frequency_second")
                     .withStyle(ChatFormatting.BLUE));
-            if (isFrequencySymbol(slot.getItem())) {
+            if (FrequencyItemHelper.isFrequencySymbol(slot.getItem())) {
                 tooltipLines.add(Component.translatable("gui.createredstonelinkgui.middle_click_swap")
                         .withStyle(ChatFormatting.GOLD));
             }
@@ -337,8 +330,8 @@ public abstract class AbstractLinkConfigScreen<T extends AbstractContainerMenu>
 
         // 方块预览
         if (this.minecraft.level != null) {
-            var blockState = this.minecraft.level.getBlockState(getBlockPos());
-            var blockEntity = this.minecraft.level.getBlockEntity(getBlockPos());
+            var blockState = this.minecraft.level.getBlockState(this.menu.getPos());
+            var blockEntity = this.minecraft.level.getBlockEntity(this.menu.getPos());
             BlockPreviewRenderer.render(graphics, blockState, blockEntity,
                     x + getBlockPreviewX(), contentTop + getBlockPreviewY());
         }

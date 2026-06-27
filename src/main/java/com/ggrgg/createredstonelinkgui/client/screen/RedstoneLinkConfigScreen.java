@@ -1,12 +1,9 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.client.screen.widget.RedstoneLinkToggleWidget;
-import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.RedstoneLinkMenu;
-import com.simibubi.create.content.redstone.link.LinkBehaviour;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlock;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,24 +21,6 @@ public class RedstoneLinkConfigScreen extends AbstractLinkConfigScreen<RedstoneL
     @Override
     protected ResourceLocation getOverlayTexture() {
         return OVERLAY_TEXTURE;
-    }
-
-    @Override
-    protected BlockPos getBlockPos() {
-        return this.menu.getPos();
-    }
-
-    @Override
-    protected Object getBehaviour() {
-        return this.menu.getBehaviour();
-    }
-
-    @Override
-    protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
-        Object behaviour = getBehaviour();
-        if (behaviour != null) {
-            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
-        }
     }
 
     @Override

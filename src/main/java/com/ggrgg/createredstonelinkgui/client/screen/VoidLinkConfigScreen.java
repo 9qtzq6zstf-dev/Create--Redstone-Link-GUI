@@ -1,15 +1,11 @@
 package com.ggrgg.createredstonelinkgui.client.screen;
 
 import com.ggrgg.createredstonelinkgui.common.VoidLinkHelper;
-import com.ggrgg.createredstonelinkgui.common.menu.FrequencyHelper;
 import com.ggrgg.createredstonelinkgui.common.menu.VoidLinkMenu;
 import com.ggrgg.createredstonelinkgui.common.network.VoidLinkClaimPayload;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -34,24 +30,6 @@ public class VoidLinkConfigScreen extends AbstractLinkConfigScreen<VoidLinkMenu>
     }
 
     @Override
-    protected BlockPos getBlockPos() {
-        return this.menu.getPos();
-    }
-
-    @Override
-    protected Object getBehaviour() {
-        return this.menu.getBehaviour();
-    }
-
-    @Override
-    protected void applyFrequencyChange(int slotIndex, boolean isFirst, ItemStack stack) {
-        Object behaviour = getBehaviour();
-        if (behaviour != null) {
-            FrequencyHelper.applyFrequencyChangeDirect(behaviour, isFirst, stack);
-        }
-    }
-
-    @Override
     protected int getBlockPreviewX() {
         return 225;
     }
@@ -65,11 +43,11 @@ public class VoidLinkConfigScreen extends AbstractLinkConfigScreen<VoidLinkMenu>
     protected void addExtraWidgets(int contentLeft, int contentTop) {
         // Claim skull button
         SkullButton skullBtn = new SkullButton(contentLeft + 79, contentTop + 64, btn -> {
-            Object b = getBehaviour();
+            Object b = this.menu.getBehaviour();
             if (b != null) {
                 var owner = VoidLinkHelper.getOwner(b);
                 if (owner == null || (this.minecraft.player != null && owner.getId().equals(this.minecraft.player.getUUID()))) {
-                    PacketDistributor.sendToServer(new VoidLinkClaimPayload(getBlockPos()));
+                    PacketDistributor.sendToServer(new VoidLinkClaimPayload(this.menu.getPos()));
                 }
             }
         });
