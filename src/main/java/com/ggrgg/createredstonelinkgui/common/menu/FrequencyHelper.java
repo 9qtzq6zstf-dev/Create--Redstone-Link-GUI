@@ -12,15 +12,17 @@ import net.minecraft.world.item.ItemStack;
  * VoidLinkBehaviour. Eliminates duplicated reflection code between RedstoneLinkMenu
  * and VoidLinkMenu (and network handlers).
  * 
- * <p>LinkBehaviour reflection is initialized eagerly on class load.
- * VoidLinkBehaviour reflection is initialized lazily on first use (since the
- * Create Utilities mod is optional).
+ * <p>Both reflection sets are initialized lazily on first use. Although LinkBehaviour
+ * is a hard dependency of this mod, lazy init is preferred for consistency, better
+ * debuggability (stack traces lead to the call site), and to avoid class loading
+ * order issues in complex modded environments. The per-call overhead of a single
+ * boolean check is negligible.
  */
 public class FrequencyHelper {
 
     // ==================== LinkBehaviour (Create) Reflection ====================
 
-    private static boolean linkInit = false;
+    private static boolean linkReflectionResolved = false;
     private static Method LINK_setFrequencyMethod;
     private static Field LINK_firstFreqField;
     private static Field LINK_lastFreqField;
@@ -28,7 +30,7 @@ public class FrequencyHelper {
 
     // ==================== VoidLinkBehaviour (Create Utilities) Reflection ====================
 
-    private static boolean voidInit = false;
+    private static boolean voidReflectionResolved = false;
     private static Method VOID_setFrequencyMethod;
     private static Field VOID_firstFreqField;
     private static Field VOID_lastFreqField;
@@ -38,11 +40,11 @@ public class FrequencyHelper {
     private static Method cachedGetStackMethod;
     private static Method cachedFrequencyOfMethod;
 
-    // ==================== LinkBehaviour Init (Eager) ====================
+    // ==================== LinkBehaviour Init (Lazy) ====================
 
     private static void initLinkReflection() {
-        if (linkInit) return;
-        linkInit = true;
+        if (linkReflectionResolved) return;
+        linkReflectionResolved = true;
         try {
             LINK_setFrequencyMethod = LinkBehaviour.class.getMethod("setFrequency", boolean.class, ItemStack.class);
         } catch (Exception ignored) {}
@@ -65,8 +67,8 @@ public class FrequencyHelper {
     // ==================== VoidLinkBehaviour Init (Lazy) ====================
 
     private static void initVoidReflection() {
-        if (voidInit) return;
-        voidInit = true;
+        if (voidReflectionResolved) return;
+        voidReflectionResolved = true;
         try {
             Class<?> vlbClass = Class.forName("me.duquee.createutilities.blocks.voidtypes.VoidLinkBehaviour");
             try { VOID_setFrequencyMethod = vlbClass.getMethod("setFrequency", boolean.class, ItemStack.class); } catch (Throwable ignored) {}
