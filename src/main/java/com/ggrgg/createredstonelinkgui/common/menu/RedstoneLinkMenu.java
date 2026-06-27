@@ -174,11 +174,7 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             
             // Right-click (button 1) or Q-throw: clear the slot
             if (button == 1 || clickType == ClickType.THROW) {
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
-                }
+                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
                 this.getSlot(slotId).set(ItemStack.EMPTY);
                 return;
             }
@@ -188,19 +184,11 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
             if (!carried.isEmpty()) {
                 ItemStack placed = carried.copy();
                 placed.setCount(1);
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, placed);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, placed));
-                }
+                presetData.setStack(presetIndex, slotIndex, placed);
                 this.getSlot(slotId).set(placed);
             } else {
                 // Carried is empty, clear the slot
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
-                }
+                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
                 this.getSlot(slotId).set(ItemStack.EMPTY);
             }
             return;

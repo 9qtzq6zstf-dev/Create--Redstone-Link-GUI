@@ -133,11 +133,7 @@ public class VoidLinkMenu extends AbstractContainerMenu {
             
             // Right-click or Q-throw: clear
             if (button == 1 || clickType == ClickType.THROW) {
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
-                }
+                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
                 this.getSlot(slotId).set(ItemStack.EMPTY);
                 return;
             }
@@ -147,18 +143,10 @@ public class VoidLinkMenu extends AbstractContainerMenu {
             if (!carried.isEmpty()) {
                 ItemStack placed = carried.copy();
                 placed.setCount(1);
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, placed);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, placed));
-                }
+                presetData.setStack(presetIndex, slotIndex, placed);
                 this.getSlot(slotId).set(placed);
             } else {
-                if (player.level().isClientSide()) {
-                    presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                        new PresetSlotUpdatePayload(presetIndex, slotIndex, ItemStack.EMPTY));
-                }
+                presetData.setStack(presetIndex, slotIndex, ItemStack.EMPTY);
                 this.getSlot(slotId).set(ItemStack.EMPTY);
             }
             return;
