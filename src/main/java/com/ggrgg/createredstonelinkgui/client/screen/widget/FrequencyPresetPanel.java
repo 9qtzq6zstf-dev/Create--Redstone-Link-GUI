@@ -26,33 +26,48 @@ import net.neoforged.neoforge.network.PacketDistributor;
  * 
  * <p>Background image can be offset independently via BG_OFFSET_X/Y,
  * while buttons and slots remain at their original positions.
+ *
+ * <h2>Layout Constants</h2>
+ * These public constants are the SINGLE SOURCE OF TRUTH for slot positions.
+ * Both RedstoneLinkMenu and VoidLinkMenu read from these to position
+ * their GhostRecipeSlots at the same coordinates where items render.
+ * If you change these, the menus auto-adjust — no manual sync needed.
  */
 public class FrequencyPresetPanel {
 
-    // ==================== 布局常量 ====================
-    private static final int SLOT_X = 6;
-    private static final int SLOT_Y_OFFSET = 8;
-    private static final int SLOT_SPACING_X = 26;
-    private static final int SLOT_SIZE = 16;
+    // ==================== 布局常量（public — 供菜单按相同坐标定位） ====================
+    /** Slot X position within the panel (relative to panelX). */
+    public static final int SLOT_X = 6;
+    /** Slot Y offset within each row (relative to row top). */
+    public static final int SLOT_Y_OFFSET = 8;
+    /** Distance from slot 0 left edge to slot 1 left edge. */
+    public static final int SLOT_SPACING_X = 26;
+    /** Standard inventory slot size. */
+    public static final int SLOT_SIZE = 16;
+    /** Height of the header segment. */
+    public static final int HEADER_H = 36;
+    /** Height of each row segment. */
+    public static final int ROW_H = 31;
+    /** Panel X offset from leftPos: panelX = leftPos + PANEL_OFFSET = leftPos - 71. */
+    public static final int PANEL_OFFSET = 40 - 111; // = -71
+
     private static final int COPY_BTN_X = 55;
     private static final int PASTE_BTN_X = 75;
     private static final int BTN_Y_OFFSET = 7;
     private static final int BTN_SIZE = 18;
 
     // ==================== 背景偏移（只移动背景图片，不移动按钮/槽位） ====================
-    private static final int BG_OFFSET_X = -7;   // 水平偏移，正数向右
-    private static final int BG_OFFSET_Y = 0;   // 垂直偏移，正数向下
+    private static final int BG_OFFSET_X = -7;
+    private static final int BG_OFFSET_Y = 0;
 
     // ==================== 纹理UV坐标 — 面板分段 ====================
     private static final int HEADER_U = 0;
     private static final int HEADER_V = 0;
     private static final int HEADER_W = 111;
-    private static final int HEADER_H = 36;
 
     private static final int ROW_U = 0;
     private static final int ROW_V = 39;
     private static final int ROW_W = 112;
-    private static final int ROW_H = 31;
 
     private static final int FOOTER_U = 0;
     private static final int FOOTER_V = 73;
@@ -152,37 +167,35 @@ public class FrequencyPresetPanel {
         Font font = Minecraft.getInstance().font;
         boolean globalCopyEnabled = isCopyGloballyEnabled();
 
-        // 计算背景绘制位置（在 panelX/Y 基础上加偏移）
         int bgX = panelX + BG_OFFSET_X;
         int bgY = panelY + BG_OFFSET_Y;
 
-        // 1. 顶部（背景偏移）
+        // 1. 顶部
         graphics.blit(PANEL_TEXTURE, bgX, bgY,
             HEADER_U, HEADER_V, HEADER_W, HEADER_H, TEX_WIDTH, TEX_HEIGHT);
 
-        // 2. 中部（每行，背景偏移）
+        // 2. 中部（每行）
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = bgY + HEADER_H + row * ROW_H;
             graphics.blit(PANEL_TEXTURE, bgX, rowY,
                 ROW_U, ROW_V, ROW_W, ROW_H, TEX_WIDTH, TEX_HEIGHT);
         }
 
-        // 3. 底部（背景偏移）
+        // 3. 底部
         int footerY = bgY + HEADER_H + FrequencyPresetData.PRESET_COUNT * ROW_H;
         graphics.blit(PANEL_TEXTURE, bgX, footerY,
             FOOTER_U, FOOTER_V, FOOTER_W, FOOTER_H, TEX_WIDTH, TEX_HEIGHT);
 
-        // 4. 标题文字（背景偏移）
+        // 4. 标题
         Component title = Component.translatable("gui.createredstonelinkgui.presets");
         int titleWidth = font.width(title);
         graphics.drawString(font, title, bgX + (PANEL_WIDTH - titleWidth) / 2, bgY + 30, 0xFF70493F, false);
 
-        // 5. 行内容（槽位 + 按钮）— 仍使用 panelX/panelY，不受背景偏移影响
+        // 5. 行内容（槽位 + 按钮）
         for (int row = 0; row < FrequencyPresetData.PRESET_COUNT; row++) {
             int rowY = panelY + HEADER_H + row * ROW_H;
             boolean pasteEnabled = isPasteEnabled(row);
 
-            // 槽位（位置不变）
             for (int col = 0; col < 2; col++) {
                 int slotX = panelX + SLOT_X + col * SLOT_SPACING_X;
                 int uvU = (col == 0) ? SLOT0_UV_U : SLOT1_UV_U;
@@ -195,7 +208,6 @@ public class FrequencyPresetPanel {
                 }
             }
 
-            // 复制按钮（位置不变）
             int copyBtnX = panelX + COPY_BTN_X;
             boolean copyHover = globalCopyEnabled && isHovered(mouseX, mouseY, copyBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
             graphics.blit(PANEL_TEXTURE, copyBtnX, rowY + BTN_Y_OFFSET,
@@ -203,7 +215,6 @@ public class FrequencyPresetPanel {
                 copyHover ? COPY_BTN_HOVER_UV_V : COPY_BTN_UV_V,
                 COPY_BTN_UV_W, COPY_BTN_UV_H, TEX_WIDTH, TEX_HEIGHT);
 
-            // 粘贴按钮（位置不变）
             int pasteBtnX = panelX + PASTE_BTN_X;
             boolean pasteHover = pasteEnabled && isHovered(mouseX, mouseY, pasteBtnX, rowY + BTN_Y_OFFSET, BTN_SIZE, BTN_SIZE);
             graphics.blit(PANEL_TEXTURE, pasteBtnX, rowY + BTN_Y_OFFSET,

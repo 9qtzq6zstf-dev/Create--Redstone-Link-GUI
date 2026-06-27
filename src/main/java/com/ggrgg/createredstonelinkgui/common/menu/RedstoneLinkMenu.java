@@ -34,10 +34,16 @@ public class RedstoneLinkMenu extends AbstractContainerMenu {
     public static final int PRESET_SLOTS_PER_ROW = 2;
     public static final int PRESET_ROWS = FrequencyPresetData.PRESET_COUNT;
 
-    // Panel floats at panelX = leftPos - 71, panelY = contentTop + 2 (= topPos + 8).
-    // Slot absolute = panelX + 6 + col*26, panelY + 36 + row*31 + 8
-    // Relative to leftPos: X = (leftPos - 71) + 6 + col*26 - leftPos = -65 + col*26
-    // Relative to topPos: Y = 8 + 36 + 8 + row*31 - topPos = 52 + row*31
+    // ⚠ MUST MATCH FrequencyPresetPanel layout constants ⚠
+    // If you change FrequencyPresetPanel.SLOT_X/PANEL_OFFSET/HEADER_H/SLOT_Y_OFFSET/ROW_H/SLOT_SPACING_X,
+    // update these values to match. They cannot reference the panel class directly
+    // because this is a common class (server-safe), while FrequencyPresetPanel is client-only.
+    //
+    // Derivation from panel constants:
+    //   X_START = PANEL_OFFSET(-71) + SLOT_X(6) = -65
+    //   Y_START = 8 + HEADER_H(36) + SLOT_Y_OFFSET(8) = 52
+    //   SPACING_X = SLOT_SPACING_X(26)
+    //   SPACING_Y = ROW_H(31)
     public static final int PRESET_SLOT_X_START = -65;
     public static final int PRESET_SLOT_Y_START = 52;
     public static final int PRESET_SLOT_SPACING_X = 26;
