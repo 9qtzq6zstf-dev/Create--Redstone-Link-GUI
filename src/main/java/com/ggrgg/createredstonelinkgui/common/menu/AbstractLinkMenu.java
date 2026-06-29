@@ -136,8 +136,8 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
 
     /**
      * Handle clicks on frequency slots (0, 1).
-     * Consumes the carried item to prevent the same item from "bleeding" into
-     * subsequent slot clicks (which was the root cause of apparent cross-contamination).
+     * The item stays on the cursor (ghost slot behavior), allowing the same item
+     * to be placed into multiple slots. Right-click or Q clears the slot.
      */
     protected void handleFrequencySlotClick(int slotId, int button, ClickType clickType, Player player) {
         var slot = this.getSlot(slotId);
@@ -147,13 +147,12 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
             // Right-click or Q: clear the slot
             slot.set(ItemStack.EMPTY);
         } else {
-            // Left-click: place a single copy of the carried item, then consume it
+            // Left-click: place a single copy of the carried item; item stays on cursor
             ItemStack carried = getCarried();
             if (!carried.isEmpty()) {
                 targetStack = carried.copy();
                 targetStack.setCount(1);
                 slot.set(targetStack);
-                setCarried(ItemStack.EMPTY);
             }
         }
 
@@ -168,7 +167,8 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
      * Handle clicks on preset slots (2-9).
      * All writes go through GhostRecipeSlot.set() which calls the updateCallback,
      * so there is no need for a separate direct presetData.setStack() call.
-     * Consumes the carried item to prevent cross-contamination.
+     * The item stays on the cursor (ghost slot behavior). Right-click or Q clears
+     * the slot. Left-click with an empty cursor also clears the slot.
      */
     protected boolean handlePresetSlotClick(int slotId, int button, ClickType clickType, Player player) {
         if (slotId >= PRESET_SLOT_START && slotId < PRESET_SLOT_START + PRESET_ROWS * PRESET_SLOTS_PER_ROW) {
@@ -186,7 +186,6 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                 ItemStack placed = carried.copy();
                 placed.setCount(1);
                 slot.set(placed);
-                setCarried(ItemStack.EMPTY);
             } else {
                 // Carried is empty — clear the slot
                 slot.set(ItemStack.EMPTY);
