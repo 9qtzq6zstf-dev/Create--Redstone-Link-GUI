@@ -1,5 +1,10 @@
 ## Changelog
 
+# 1.21.1-1.9.1
+
+- Fix broken slots interaction caused by refactoring
+- Fix deleting items dropped into slots
+
 # 1.21.1-1.9.0
 
 - Add preset copy & paste function
