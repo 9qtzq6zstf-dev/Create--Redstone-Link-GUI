@@ -16,6 +16,11 @@ import net.minecraft.world.item.ItemStack;
  * Abstract base class for both RedstoneLinkMenu and VoidLinkMenu.
  * Contains all shared layout constants, preset slot logic, frequency slot handling,
  * and player inventory construction.
+ * 
+ * <p>Subclasses are responsible for calling {@link #addPresetSlots(Inventory)}
+ * and {@link #addPlayerInventorySlots(Inventory)} in their constructors
+ * <b>after</b> adding frequency slots, to ensure frequency slots are at
+ * indices 0 and 1 for correct identity-based slot handling.
  */
 public abstract class AbstractLinkMenu extends AbstractContainerMenu {
 
@@ -46,21 +51,6 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
         super(menuType, containerId);
         this.pos = pos;
         this.player = playerInventory.player;
-
-        // Preset slots added by helper — subclasses add frequency slots themselves
-        addPresetSlots(playerInventory);
-
-        // Player Main Inventory Layout (Rows 1-3)
-        for (int row = 0; row < 3; ++row) {
-            for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 48 + col * 18, 112 + row * 18));
-            }
-        }
-
-        // Player Hotbar Layout (Row 4)
-        for (int col = 0; col < 9; ++col) {
-            this.addSlot(new Slot(playerInventory, col, 48 + col * 18, 170));
-        }
     }
 
     // ==================== Subclass hooks ====================
@@ -80,7 +70,12 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
 
     // ==================== Preset slots ====================
 
-    private void addPresetSlots(Inventory playerInventory) {
+    /**
+     * Adds 8 ghost recipe slots (PRESET_ROWS × PRESET_SLOTS_PER_ROW) for the
+     * frequency preset panel. Call this from the subclass constructor
+     * <b>after</b> adding frequency slots so that preset slots start at index 2.
+     */
+    protected void addPresetSlots(Inventory playerInventory) {
         FrequencyPresetData presetData = FrequencyPresetData.get(playerInventory.player);
         for (int row = 0; row < PRESET_ROWS; row++) {
             for (int col = 0; col < PRESET_SLOTS_PER_ROW; col++) {
@@ -100,6 +95,23 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                     }
                 ));
             }
+        }
+    }
+
+    /**
+     * Adds the player's main inventory (rows 1-3) and hotbar (row 4).
+     * Call this after frequency and preset slots have been added.
+     */
+    protected void addPlayerInventorySlots(Inventory playerInventory) {
+        // Player Main Inventory Layout (Rows 1-3)
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 9; ++col) {
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 48 + col * 18, 112 + row * 18));
+            }
+        }
+        // Player Hotbar Layout (Row 4)
+        for (int col = 0; col < 9; ++col) {
+            this.addSlot(new Slot(playerInventory, col, 48 + col * 18, 170));
         }
     }
 
@@ -141,7 +153,6 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                 targetStack = carried.copy();
                 targetStack.setCount(1);
                 slot.set(targetStack);
-                // 🔴 FIX: Consume the carried item so it doesn't appear in subsequent clicks
                 setCarried(ItemStack.EMPTY);
             }
         }
@@ -175,7 +186,6 @@ public abstract class AbstractLinkMenu extends AbstractContainerMenu {
                 ItemStack placed = carried.copy();
                 placed.setCount(1);
                 slot.set(placed);
-                // 🔴 FIX: Consume the carried item so it doesn't appear in subsequent clicks
                 setCarried(ItemStack.EMPTY);
             } else {
                 // Carried is empty — clear the slot

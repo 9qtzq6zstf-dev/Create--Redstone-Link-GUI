@@ -30,10 +30,18 @@ public class VoidLinkMenu extends AbstractLinkMenu {
         var level = playerInventory.player.level();
         this.behaviour = VoidLinkHelper.getBehaviour(level, pos);
 
-        // Add custom Ghost Recipe Slots for frequency slots
-        this.addSlot(new GhostRecipeSlot(0, 101, 34, () -> FrequencyHelper.getFrequencyItem(behaviour, 0),
+        // 1. Frequency slots FIRST — indices 0, 1
+        this.addSlot(new GhostRecipeSlot(0, 101, 34,
+            () -> FrequencyHelper.getFrequencyItem(behaviour, 0),
             (id, stack) -> FrequencyHelper.setFrequencyItem(behaviour, id, stack)));
-        this.addSlot(new GhostRecipeSlot(1, 137, 34, () -> FrequencyHelper.getFrequencyItem(behaviour, 1),
+        this.addSlot(new GhostRecipeSlot(1, 137, 34,
+            () -> FrequencyHelper.getFrequencyItem(behaviour, 1),
             (id, stack) -> FrequencyHelper.setFrequencyItem(behaviour, id, stack)));
+
+        // 2. Preset slots at indices 2-9
+        addPresetSlots(playerInventory);
+
+        // 3. Player inventory at indices 10+
+        addPlayerInventorySlots(playerInventory);
     }
 }
